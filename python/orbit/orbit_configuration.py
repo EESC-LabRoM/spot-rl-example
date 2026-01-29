@@ -2,13 +2,39 @@
 
 import json
 import os
+from platform import node
 import re
 from dataclasses import dataclass
 from typing import List
 
-from orbit.orbit_constants import ordered_joint_names_orbit
+from orbit.orbit_constants import ORDERED_JOINT_NAMES_ORBIT
 from utils.dict_tools import dict_from_lists, set_matching
+import yaml
 
+class Ref(yaml.YAMLObject):
+    yaml_tag = 'tag:yaml.org,2002:python/tuple'
+    def __init__(self, val):
+        self.val = val
+
+    @classmethod
+    def from_yaml(cls, loader, node):
+        return tuple(node.value)
+
+class Slices(yaml.YAMLObject):
+    yaml_tag = 'python/object/apply:builtins.slice'
+
+    @classmethod
+    def from_yaml(cls, loader, node):
+        values = node.value
+        if len(values) == 1:
+            return slice(values[0].value)
+        elif len(values) == 2:
+            return slice(values[0].value, values[1].value)
+        elif len(values) == 3:
+            return slice(values[0].value, values[1].value, values[2].value)
+
+yaml.SafeLoader.add_constructor('tag:yaml.org,2002:python/tuple', Ref.from_yaml)
+yaml.SafeLoader.add_constructor('tag:yaml.org,2002:python/object/apply:builtins.slice', Slices.from_yaml)
 
 @dataclass
 class OrbitConfig:
@@ -21,20 +47,28 @@ class OrbitConfig:
     action_scale: float
 
 
-def detect_config_file(directory: os.PathLike) -> os.PathLike:
-    """find json file in policy directory
+def detect_config_file(directory: os.PathLike) -> dict:
+        """find and parse json or yaml file in policy directory
 
-    arguments
-    directory -- path where policy and training configuration can be found
+        arguments
+        directory -- path where policy and training configuration can be found
 
-    return filepath to json file
-    """
-    print(os.listdir(directory))
-    files = [f for f in os.listdir(directory) if f.endswith(".json")]
-    print(files)
-    if len(files) == 1:
-        return os.path.join(directory, files[0])
-    return None
+        return dictionary from config file
+        """
+        files = [f for f in os.listdir(directory) if f.endswith(".json")]
+        if len(files) == 1:
+            filepath = os.path.join(directory, files[0])
+            with open(filepath) as f:
+                return json.load(f)
+
+        files = [f for f in os.listdir(directory) if f.endswith(".yaml")]
+        if len(files) == 1:
+
+            filepath = os.path.join(directory, files[0])
+            with open(filepath) as f:
+                return yaml.safe_load(f)
+
+        return None
 
 
 def detect_policy_file(directory: os.PathLike) -> os.PathLike:
@@ -51,7 +85,7 @@ def detect_policy_file(directory: os.PathLike) -> os.PathLike:
     return None
 
 
-def load_configuration(file: os.PathLike) -> OrbitConfig:
+def load_configuration(env_config: dict) -> OrbitConfig:
     """parse json file and populate an OrbitConfig dataclass
 
     arguments
@@ -59,28 +93,26 @@ def load_configuration(file: os.PathLike) -> OrbitConfig:
 
     return OrbitConfig containing needed training configuration
     """
+    
+    joint_kp = dict_from_lists(ORDERED_JOINT_NAMES_ORBIT, [None] * 19)
+    joint_kd = dict_from_lists(ORDERED_JOINT_NAMES_ORBIT, [None] * 19)
+    joint_offsets = dict_from_lists(ORDERED_JOINT_NAMES_ORBIT, [None] * 19)
 
-    joint_kp = dict_from_lists(ordered_joint_names_orbit, [None] * 12)
-    joint_kd = dict_from_lists(ordered_joint_names_orbit, [None] * 12)
-    joint_offsets = dict_from_lists(ordered_joint_names_orbit, [None] * 12)
+    actuators = env_config["scene"]["robot"]["actuators"]
+    for group in actuators.keys():
+        regex = re.compile(actuators[group]["joint_names_expr"][0])
 
-    with open(file) as f:
-        env_config = json.load(f)
-        actuators = env_config["scene"]["robot"]["actuators"]
-        for group in actuators.keys():
-            regex = re.compile(actuators[group]["joint_names_expr"][0])
+        set_matching(joint_kp, regex, actuators[group]["stiffness"])
+        set_matching(joint_kd, regex, actuators[group]["damping"])
 
-            set_matching(joint_kp, regex, actuators[group]["stiffness"])
-            set_matching(joint_kd, regex, actuators[group]["damping"])
+    default_joint_data = env_config["scene"]["robot"]["init_state"]["joint_pos"]
+    default_joint_expressions = default_joint_data.keys()
+    for expression in default_joint_expressions:
+        regex = re.compile(expression)
+        set_matching(joint_offsets, regex, default_joint_data[expression])
 
-        default_joint_data = env_config["scene"]["robot"]["init_state"]["joint_pos"]
-        default_joint_expressions = default_joint_data.keys()
-        for expression in default_joint_expressions:
-            regex = re.compile(expression)
-            set_matching(joint_offsets, regex, default_joint_data[expression])
-
-        action_scale = env_config["actions"]["joint_pos"]["scale"]
-        standing_height = env_config["scene"]["robot"]["init_state"]["pos"][2]
+    action_scale = env_config["actions"]["joint_pos"]["scale"]
+    standing_height = env_config["scene"]["robot"]["init_state"]["pos"][2]
 
     return OrbitConfig(
         kp=joint_kp,

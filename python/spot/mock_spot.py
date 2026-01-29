@@ -32,16 +32,19 @@ class RepeatedTimer(Thread):
 
 
 class MockSpot:
+    _command_thread = None
+    _state_stream_stopping = False
+    _command_stream_stopping = False
+
     def __init__(self):
-        self._state_stream_stopping = False
-        self._command_stream_stopping = False
+        ... 
 
     def start_state_stream(self, on_state_update: Callable[[RobotStateStreamResponse], None]):
         self._state_msg = RobotStateStreamResponse()
         self._state_msg.kinematic_state.odom_tform_body.rotation.w = 1
-        self._state_msg.joint_states.position.extend([0] * 12)
-        self._state_msg.joint_states.velocity.extend([0] * 12)
-        self._state_msg.joint_states.load.extend([0] * 12)
+        self._state_msg.joint_states.position.extend([0] * 19)
+        self._state_msg.joint_states.velocity.extend([0] * 19)
+        self._state_msg.joint_states.load.extend([0] * 19)
 
         self._stateUpdates = RepeatedTimer(1 / 333, on_state_update, args=[self._state_msg])
         self._stateUpdates.start()

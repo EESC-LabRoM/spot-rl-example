@@ -6,12 +6,6 @@ from pathlib import Path
 
 import bosdyn.client.util
 import orbit.orbit_configuration
-from hid.gamepad import (
-    Gamepad,
-    GamepadConfig,
-    joystick_connected,
-    load_gamepad_configuration,
-)
 from orbit.onnx_command_generator import (
     OnnxCommandGenerator,
     OnnxControllerContext,
@@ -20,7 +14,7 @@ from orbit.onnx_command_generator import (
 from spot.mock_spot import MockSpot
 from spot.spot import Spot
 from utils.event_divider import EventDivider
-
+from hid.keyboard import Keyboard
 
 def main():
     """Command line interface. change that is ok"""
@@ -28,34 +22,22 @@ def main():
     bosdyn.client.util.add_base_arguments(parser)
     parser.add_argument("policy_file_path", type=Path)
     parser.add_argument("-m", "--mock", action="store_true")
-    parser.add_argument("--gamepad-config", type=Path)
     options = parser.parse_args()
-
-    conf_file = orbit.orbit_configuration.detect_config_file(options.policy_file_path)
+    
+    env_config = orbit.orbit_configuration.detect_config_file(options.policy_file_path)
     policy_file = orbit.orbit_configuration.detect_policy_file(options.policy_file_path)
 
+    config = orbit.orbit_configuration.load_configuration(env_config)
+    print("Loaded configs: ", config)
+
     context = OnnxControllerContext()
-    config = orbit.orbit_configuration.load_configuration(conf_file)
-    print(config)
-
     state_handler = StateHandler(context)
-    print(options.verbose)
+    print("Verbose option: ", options.verbose)
+    
     command_generator = OnnxCommandGenerator(context, config, policy_file, options.verbose)
-
+    gamepad = Keyboard(context)
     # 333 Hz state update / 6 => ~56 Hz control updates
     timeing_policy = EventDivider(context.event, 6)
-
-    gamepad = None
-    if joystick_connected():
-        if options.gamepad_config is not None:
-            print("[INFO] loading gamepad config from file")
-            gamepad_config = load_gamepad_configuration(options.gamepad_config)
-        else:
-            print("[INFO] using default gamepad configuration")
-            gamepad_config = GamepadConfig()
-
-        gamepad = Gamepad(context, gamepad_config)
-        gamepad.start_listening()
 
     if options.mock:
         spot = MockSpot()
@@ -66,24 +48,22 @@ def main():
         try:
             spot.power_on()
             spot.stand(0.0)
+            print("start state stream")
             spot.start_state_stream(state_handler)
 
-            input()
+            # input(" OK To enter loop")
+            print("start command stream")
             spot.start_command_stream(command_generator, timeing_policy)
-            input()
+            gamepad.listen()
 
         except KeyboardInterrupt:
             print("killed with ctrl-c")
-
         finally:
             print("stop command stream")
             spot.stop_command_stream()
             print("stop state stream")
             spot.stop_state_stream()
             print("stop game pad")
-            if gamepad is not None:
-                gamepad.stop_listening()
-            print("all stopped")
 
 
 if __name__ == "__main__":

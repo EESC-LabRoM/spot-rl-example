@@ -2,7 +2,7 @@
 
 """spots base joints in order expected/used by orbit libraries"""
 
-ordered_joint_names_orbit = [
+ORDERED_JOINT_NAMES_BASE_ORBIT = [
     "fl_hx",
     "fr_hx",
     "hl_hx",
@@ -16,3 +16,16 @@ ordered_joint_names_orbit = [
     "hl_kn",
     "hr_kn",
 ]
+
+ORDERED_JOINT_NAMES_ARM_ORBIT = [
+    "arm_sh0",
+    "arm_sh1",
+    "arm_el0",
+    "arm_el1",
+    "arm_wr0",
+    "arm_wr1",
+    "arm_f1x",
+]
+
+
+ORDERED_JOINT_NAMES_ORBIT =  ORDERED_JOINT_NAMES_BASE_ORBIT + ORDERED_JOINT_NAMES_ARM_ORBIT

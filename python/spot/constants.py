@@ -6,7 +6,7 @@
 
 from enum import IntEnum
 
-ordered_joint_names_bosdyn = [
+ORDERED_JOINT_NAMES_BOSDYN_BASE = [
     "fl_hx",
     "fl_hy",
     "fl_kn",
@@ -18,9 +18,20 @@ ordered_joint_names_bosdyn = [
     "hl_kn",
     "hr_hx",
     "hr_hy",
-    "hr_kn",
+    "hr_kn"
 ]
 
+ORDERED_JOINT_NAMES_BOSDYN_ARM = [
+        "arm_sh0",
+        "arm_sh1",
+        "arm_el0",
+        "arm_el1",
+        "arm_wr0",
+        "arm_wr1",
+        "arm_f1x",
+    ]
+
+ORDERED_JOINT_NAMES_BOSDYN = ORDERED_JOINT_NAMES_BOSDYN_BASE + ORDERED_JOINT_NAMES_BOSDYN_ARM
 
 # Link index and order
 class DOF(IntEnum):

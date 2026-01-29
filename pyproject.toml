@@ -1,0 +1,16 @@
+[project]
+name = "spot-rl-example"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "bosdyn-choreography-client>=5.1.0",
+    "bosdyn-client>=5.1.0",
+    "bosdyn-mission>=5.1.0",
+    "bosdyn-orbit>=5.1.0",
+    "onnxruntime>=1.23.2",
+    "pygame>=2.6.1",
+    "pyps4controller>=1.2.5",
+    "spatialmath-python>=1.1.15",
+]

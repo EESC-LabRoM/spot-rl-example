@@ -14,8 +14,8 @@ from bosdyn.api.robot_command_pb2 import JointControlStreamRequest
 from bosdyn.api.robot_state_pb2 import RobotStateStreamResponse
 from bosdyn.util import seconds_to_timestamp, set_timestamp_from_now, timestamp_to_sec
 from orbit.orbit_configuration import OrbitConfig
-from orbit.orbit_constants import ordered_joint_names_orbit
-from spot.constants import DEFAULT_K_Q_P, DEFAULT_K_QD_P, ordered_joint_names_bosdyn
+from orbit.orbit_constants import ORDERED_JOINT_NAMES_BASE_ORBIT
+from spot.constants import DEFAULT_K_Q_P, DEFAULT_K_QD_P, ORDERED_JOINT_NAMES_BOSDYN_BASE
 from utils.dict_tools import dict_to_list, find_ordering, reorder
 
 @dataclass
@@ -97,14 +97,12 @@ class OnnxCommandGenerator:
         # post process model output apply action scaling and return to spots
         # joint order and offset
         test_scale = min(0.1 * self._count, 1)
-
         scaled_output = list(map(mul, [self._config.action_scale] * 12, output))
         test_scaled = list(map(mul, [test_scale] * 12, scaled_output))
-
-        default_joints = dict_to_list(self._config.default_joints, ordered_joint_names_orbit)
+        default_joints = dict_to_list(self._config.default_joints, ORDERED_JOINT_NAMES_BASE_ORBIT)
         shifted_output = list(map(add, test_scaled, default_joints))
 
-        orbit_to_spot = find_ordering(ordered_joint_names_orbit, ordered_joint_names_bosdyn)
+        orbit_to_spot = find_ordering(ORDERED_JOINT_NAMES_BASE_ORBIT, ORDERED_JOINT_NAMES_BOSDYN_BASE)
         reordered_output = reorder(shifted_output, orbit_to_spot)
 
         # generate proto message from target joint positions
@@ -146,12 +144,13 @@ class OnnxCommandGenerator:
 
         return proto message to send in spots command stream
         """
+
         update_proto = robot_command_pb2.JointControlStreamRequest()
         set_timestamp_from_now(update_proto.header.request_timestamp)
         update_proto.header.client_name = "rl_example_client"
 
-        k_q_p = dict_to_list(self._config.kp, ordered_joint_names_bosdyn)
-        k_qd_p = dict_to_list(self._config.kd, ordered_joint_names_bosdyn)
+        k_q_p = dict_to_list(self._config.kp, ORDERED_JOINT_NAMES_BOSDYN_BASE)
+        k_qd_p = dict_to_list(self._config.kd, ORDERED_JOINT_NAMES_BOSDYN_BASE)
 
         N_DOF = len(pos_command)
         pos_cmd = [0] * N_DOF
