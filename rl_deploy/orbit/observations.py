@@ -3,11 +3,12 @@
 from operator import sub
 
 from bosdyn.api import robot_state_pb2
-from orbit.orbit_configuration import OrbitConfig
-from orbit.orbit_constants import ORDERED_JOINT_NAMES_BASE_ORBIT, ORDERED_JOINT_NAMES_ORBIT
 from spatialmath import UnitQuaternion
-from spot.constants import ORDERED_JOINT_NAMES_BOSDYN_BASE, ORDERED_JOINT_NAMES_BOSDYN
-from utils.dict_tools import dict_to_list, find_ordering, reorder
+
+from rl_deploy.orbit.orbit_configuration import OrbitConfig
+from rl_deploy.orbit.orbit_constants import ORDERED_JOINT_NAMES_ISAAC
+from rl_deploy.spot.constants import ORDERED_JOINT_NAMES_SPOT
+from rl_deploy.utils.dict_tools import dict_to_list, find_ordering, reorder
 
 
 def get_base_linear_velocity(state: robot_state_pb2.RobotStateStreamResponse):
@@ -80,9 +81,9 @@ def get_joint_positions(state: robot_state_pb2.RobotStateStreamResponse, config:
     state -- proto msg from spot containing data on the robots state
     config -- dataclass with values loaded from orbits training data
     """
-    spot_to_orbit = find_ordering(ORDERED_JOINT_NAMES_BOSDYN, ORDERED_JOINT_NAMES_ORBIT)
+    spot_to_orbit = find_ordering(ORDERED_JOINT_NAMES_SPOT, ORDERED_JOINT_NAMES_ISAAC)
     pos = reorder(state.joint_states.position, spot_to_orbit)
-    default_joints = dict_to_list(config.default_joints, ORDERED_JOINT_NAMES_ORBIT)
+    default_joints = dict_to_list(config.default_joints, ORDERED_JOINT_NAMES_ISAAC)
     pos = list(map(sub, pos, default_joints))
     return pos
 
@@ -94,6 +95,6 @@ def get_joint_velocity(state: robot_state_pb2.RobotStateStreamResponse):
     arguments
     state -- proto msg from spot containing data on the robots state
     """
-    spot_to_orbit = find_ordering(ORDERED_JOINT_NAMES_BOSDYN, ORDERED_JOINT_NAMES_ORBIT)
+    spot_to_orbit = find_ordering(ORDERED_JOINT_NAMES_SPOT, ORDERED_JOINT_NAMES_ISAAC)
     vel = reorder(state.joint_states.velocity, spot_to_orbit)
     return vel

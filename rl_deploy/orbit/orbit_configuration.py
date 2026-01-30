@@ -2,14 +2,15 @@
 
 import json
 import os
-from platform import node
 import re
 from dataclasses import dataclass
 from typing import List
 
-from orbit.orbit_constants import ORDERED_JOINT_NAMES_ORBIT
-from utils.dict_tools import dict_from_lists, set_matching
 import yaml
+
+from rl_deploy.orbit.orbit_constants import ORDERED_JOINT_NAMES_ISAAC
+from rl_deploy.utils.dict_tools import dict_from_lists, set_matching
+
 
 class Ref(yaml.YAMLObject):
     yaml_tag = 'tag:yaml.org,2002:python/tuple'
@@ -55,13 +56,13 @@ def detect_config_file(directory: os.PathLike) -> dict:
 
         return dictionary from config file
         """
-        files = [f for f in os.listdir(directory) if f.endswith(".json")]
+        files = [f for f in os.listdir(directory) if f.endswith("env.json")]
         if len(files) == 1:
             filepath = os.path.join(directory, files[0])
             with open(filepath) as f:
                 return json.load(f)
 
-        files = [f for f in os.listdir(directory) if f.endswith(".yaml")]
+        files = [f for f in os.listdir(directory) if f.endswith("env.yaml")]
         if len(files) == 1:
 
             filepath = os.path.join(directory, files[0])
@@ -94,11 +95,12 @@ def load_configuration(env_config: dict) -> OrbitConfig:
     return OrbitConfig containing needed training configuration
     """
     
-    joint_kp = dict_from_lists(ORDERED_JOINT_NAMES_ORBIT, [None] * 19)
-    joint_kd = dict_from_lists(ORDERED_JOINT_NAMES_ORBIT, [None] * 19)
-    joint_offsets = dict_from_lists(ORDERED_JOINT_NAMES_ORBIT, [None] * 19)
+    joint_kp = dict_from_lists(ORDERED_JOINT_NAMES_ISAAC, [None] * 19)
+    joint_kd = dict_from_lists(ORDERED_JOINT_NAMES_ISAAC, [None] * 19)
+    joint_offsets = dict_from_lists(ORDERED_JOINT_NAMES_ISAAC, [None] * 19)
 
     actuators = env_config["scene"]["robot"]["actuators"]
+    
     for group in actuators.keys():
         regex = re.compile(actuators[group]["joint_names_expr"][0])
 

@@ -1,9 +1,6 @@
 # Copyright (c) 2024 Boston Dynamics AI Institute LLC. All rights reserved.
 
-import json
-import os
 from dataclasses import dataclass
-from threading import Thread
 
 import numpy as np
 import pygame
@@ -31,7 +28,7 @@ class KeyboardConfig:
 
 class Keyboard:
 
-    x_vel = 0.0
+    x_vel = 1.0
     y_vel = 0.0
     yaw = 0.0
     _stopping = False
@@ -98,56 +95,59 @@ class Keyboard:
     def listen(self):
         clock = pygame.time.Clock()
         while not self._stopping:
-            # Handle events
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self._stopping = True
-
-                # Debugging: Print exactly what Pygame receives when a key goes DOWN
-                if event.type == pygame.KEYDOWN and self._verbose:
-                    key_name = pygame.key.name(event.key).upper()
-                    print(f"[DEBUG] Key Pressed: {key_name} (Code: {event.key})")
-                    
-            # Get current key states
-            keys = pygame.key.get_pressed()
-
-            # Calculate target velocities based on key presses
-            self._target_x_vel = 0.0
-            self._target_y_vel = 0.0
-            self._target_yaw = 0.0
-
-            # Forward/Backward
-            if keys[self._config.forward_key]:
-                self.x_vel += self._config.delta_forward_velocity
-            if keys[self._config.backward_key]:
-                self.x_vel -= self._config.delta_forward_velocity
-
-            # Left/Right (lateral)
-            if keys[self._config.left_key]:
-                self.y_vel += self._config.delta_lateral_velocity
-            if keys[self._config.right_key]:
-                self.y_vel -= self._config.delta_lateral_velocity
-
-            # Yaw
-            if keys[self._config.yaw_left_key]:
-                self.yaw += self._config.delta_yaw_velocity
-            if keys[self._config.yaw_right_key]:
-                self.yaw -= self._config.delta_yaw_velocity
-
-            if keys[self._config.stop_key]:
-                self.x_vel = 0.0
-                self.y_vel = 0.0
-                self.yaw = 0.0
-
-            # Cap velocities
-            self.x_vel = np.clip(self.x_vel, -self._config.max_backward_velocity, self._config.max_forward_velocity)
-            self.y_vel = np.clip(self.y_vel, -self._config.max_lateral_velocity, self._config.max_lateral_velocity)
-            self.yaw = np.clip(self.yaw, -self._config.max_yaw_velocity, self._config.max_yaw_velocity)
-            
-            self._context.velocity_cmd = [self.x_vel, self.y_vel, self.yaw]
-            
-            # Clear screen
-            self._update_display()
-
             # Update inputs at 10hz
+            self.listen_loop()
             clock.tick(10)
+
+    def listen_loop(self):
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self._stopping = True
+
+            # Debugging: Print exactly what Pygame receives when a key goes DOWN
+            if event.type == pygame.KEYDOWN and self._verbose:
+                key_name = pygame.key.name(event.key).upper()
+                print(f"[DEBUG] Key Pressed: {key_name} (Code: {event.key})")
+                
+        # Get current key states
+        keys = pygame.key.get_pressed()
+
+        # Calculate target velocities based on key presses
+        self._target_x_vel = 0.0
+        self._target_y_vel = 0.0
+        self._target_yaw = 0.0
+
+        # Forward/Backward
+        if keys[self._config.forward_key]:
+            self.x_vel += self._config.delta_forward_velocity
+        if keys[self._config.backward_key]:
+            self.x_vel -= self._config.delta_forward_velocity
+
+        # Left/Right (lateral)
+        if keys[self._config.left_key]:
+            self.y_vel += self._config.delta_lateral_velocity
+        if keys[self._config.right_key]:
+            self.y_vel -= self._config.delta_lateral_velocity
+
+        # Yaw
+        if keys[self._config.yaw_left_key]:
+            self.yaw += self._config.delta_yaw_velocity
+        if keys[self._config.yaw_right_key]:
+            self.yaw -= self._config.delta_yaw_velocity
+
+        if keys[self._config.stop_key]:
+            self.x_vel = 0.0
+            self.y_vel = 0.0
+            self.yaw = 0.0
+
+        # Cap velocities
+        self.x_vel = np.clip(self.x_vel, -self._config.max_backward_velocity, self._config.max_forward_velocity)
+        self.y_vel = np.clip(self.y_vel, -self._config.max_lateral_velocity, self._config.max_lateral_velocity)
+        self.yaw = np.clip(self.yaw, -self._config.max_yaw_velocity, self._config.max_yaw_velocity)
+        
+        self._context.velocity_cmd = [self.x_vel, self.y_vel, self.yaw]
+        
+        # Clear screen
+        self._update_display()
+

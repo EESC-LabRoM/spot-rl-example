@@ -8,15 +8,21 @@ from typing import List
 
 import numpy as np
 import onnxruntime as ort
-import orbit.observations as ob
 from bosdyn.api import robot_command_pb2
 from bosdyn.api.robot_command_pb2 import JointControlStreamRequest
 from bosdyn.api.robot_state_pb2 import RobotStateStreamResponse
 from bosdyn.util import seconds_to_timestamp, set_timestamp_from_now, timestamp_to_sec
-from orbit.orbit_configuration import OrbitConfig
-from orbit.orbit_constants import ORDERED_JOINT_NAMES_BASE_ORBIT
-from spot.constants import DEFAULT_K_Q_P, DEFAULT_K_QD_P, ORDERED_JOINT_NAMES_BOSDYN_BASE
-from utils.dict_tools import dict_to_list, find_ordering, reorder
+
+import rl_deploy.orbit.observations as ob
+from rl_deploy.orbit.orbit_configuration import OrbitConfig
+from rl_deploy.orbit.orbit_constants import ORDERED_JOINT_NAMES_BASE_ISAAC
+from rl_deploy.spot.constants import (
+    DEFAULT_K_Q_P,
+    DEFAULT_K_QD_P,
+    ORDERED_JOINT_NAMES_SPOT_BASE,
+)
+from rl_deploy.utils.dict_tools import dict_to_list, find_ordering, reorder
+
 
 @dataclass
 class OnnxControllerContext:
@@ -75,6 +81,9 @@ class OnnxCommandGenerator:
         self._init_load = None
         self.verbose = verbose
 
+        self.joints_offsets_ordered = dict_to_list(self._config.default_joints, ORDERED_JOINT_NAMES_BASE_ISAAC)
+
+
     def __call__(self):
         """makes class a callable and computes model output for latest controller context
 
@@ -88,32 +97,41 @@ class OnnxCommandGenerator:
 
         # extract observation data from latest spot state data
         input_list = self.collect_inputs(self._context.latest_state, self._config)
-        # print("observations", input_list)
+        output = self._compute_action(input_list)
+        action = self._post_process_action_to_spot(output)
 
-        # execute model from onnx file
-        input = [np.array(input_list).astype("float32")]
-        output = self._inference_session.run(None, {"obs": input})[0].tolist()[0]
-
-        # post process model output apply action scaling and return to spots
-        # joint order and offset
-        test_scale = min(0.1 * self._count, 1)
-        scaled_output = list(map(mul, [self._config.action_scale] * 12, output))
-        test_scaled = list(map(mul, [test_scale] * 12, scaled_output))
-        default_joints = dict_to_list(self._config.default_joints, ORDERED_JOINT_NAMES_BASE_ORBIT)
-        shifted_output = list(map(add, test_scaled, default_joints))
-
-        orbit_to_spot = find_ordering(ORDERED_JOINT_NAMES_BASE_ORBIT, ORDERED_JOINT_NAMES_BOSDYN_BASE)
-        reordered_output = reorder(shifted_output, orbit_to_spot)
-
-        # generate proto message from target joint positions
-        proto = self.create_proto(reordered_output)
+        # # generate proto message from target joint positions
+        # proto = self.create_proto(action)
 
         # cache data for history and logging
         self._last_action = output
         self._count += 1
         self._context.count += 1
 
-        return proto
+        return action
+
+    def _compute_action(self, input_list: List[float]):
+        # execute model from onnx file
+        input = [np.array(input_list).astype("float32")]
+        output = self._inference_session.run(None, {"obs": input})[0].tolist()[0]
+        return output
+    
+    def _post_process_action_to_spot(self, output: List[float]):
+        # post process model output apply action scaling and return to spots
+        # joint order and offset
+        test_scale = 1 # min(0.1 * self._count, 0.2)
+        scaled_output = list(map(mul, [self._config.action_scale] * 12, output))
+        test_scaled = list(map(mul, [test_scale] * 12, scaled_output))
+        
+        # set joint offsets
+        shifted_output = list(map(add, test_scaled, self.joints_offsets_ordered))
+
+        # reorder for spot
+        isaac_to_spot = find_ordering(ORDERED_JOINT_NAMES_BASE_ISAAC, ORDERED_JOINT_NAMES_SPOT_BASE)
+        reordered_output = reorder(shifted_output, isaac_to_spot)
+
+        return reordered_output
+
 
     def collect_inputs(self, state: JointControlStreamRequest, config: OrbitConfig):
         """extract observation data from spots current state and format for onnx
@@ -131,9 +149,9 @@ class OnnxCommandGenerator:
         observations += self._context.velocity_cmd
         if self.verbose:
             print("[INFO] cmd", self._context.velocity_cmd)
-        observations += ob.get_joint_positions(state, config)
-        observations += ob.get_joint_velocity(state)
-        observations += self._last_action
+        observations += ob.get_joint_positions(state, config) 
+        observations += [i*0.25 for i in ob.get_joint_velocity(state)]
+        observations += [i*0.20 for i in self._last_action]
         return observations
 
     def create_proto(self, pos_command: List[float]):
@@ -149,8 +167,8 @@ class OnnxCommandGenerator:
         set_timestamp_from_now(update_proto.header.request_timestamp)
         update_proto.header.client_name = "rl_example_client"
 
-        k_q_p = dict_to_list(self._config.kp, ORDERED_JOINT_NAMES_BOSDYN_BASE)
-        k_qd_p = dict_to_list(self._config.kd, ORDERED_JOINT_NAMES_BOSDYN_BASE)
+        k_q_p = dict_to_list(self._config.kp, ORDERED_JOINT_NAMES_SPOT_BASE)
+        k_qd_p = dict_to_list(self._config.kd, ORDERED_JOINT_NAMES_SPOT_BASE)
 
         N_DOF = len(pos_command)
         pos_cmd = [0] * N_DOF

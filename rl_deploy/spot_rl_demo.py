@@ -6,6 +6,7 @@ from pathlib import Path
 
 import bosdyn.client.util
 import orbit.orbit_configuration
+from hid.keyboard import Keyboard
 from orbit.onnx_command_generator import (
     OnnxCommandGenerator,
     OnnxControllerContext,
@@ -14,7 +15,7 @@ from orbit.onnx_command_generator import (
 from spot.mock_spot import MockSpot
 from spot.spot import Spot
 from utils.event_divider import EventDivider
-from hid.keyboard import Keyboard
+
 
 def main():
     """Command line interface. change that is ok"""
