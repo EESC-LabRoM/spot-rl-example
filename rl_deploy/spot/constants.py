@@ -6,7 +6,8 @@
 
 # https://dev.bostondynamics.com/protos/bosdyn/api/proto_reference#bosdyn-api-CombinedJointStates
 from enum import IntEnum
-
+import os 
+from rl_deploy.utils.urdf import parse_urdf_limits
 from bosdyn.api.spot import spot_constants_pb2
 
 
@@ -114,3 +115,48 @@ def set_default_gains():
 
 # Initialize default gains
 set_default_gains()
+
+
+JOINT_LIMITS = parse_urdf_limits(os.path.join(os.path.dirname(__file__), "..", "spot", "spot_description", "urdf", "spot.urdf"))
+
+JOINT_SOFT_LIMITS = {
+"fl_hx": (0.541525, 0.629967),
+"fl_hy": (0.244991, 0.450403),
+"fl_kn": (0.283921, 1.0),
+"fr_hx": (0.667273, 0.500081),
+"fr_hy": (0.217532, 0.357181),
+"fr_kn": (0.425193, 1.0),
+"hl_hx": (0.477865, 0.600584),
+"hl_hy": (0.325119, 0.623534),
+"hl_kn": (0.442601, 0.860269),
+"hr_hx": (0.656397, 0.483916),
+"hr_hy": (0.384144, 0.603661),
+"hr_kn": (0.195063, 0.865289),
+}
+
+
+"""
+Let's say my joint goes from -1 to 1.
+
+I want to safely shrink this range by 10% margin each side.
+
+In another words, the full range is 2, and I want to shrink it to 1.8.
+
+This means that the new range is [-0.9, 0.9].
+
+The inverse math is the following:
+
+new_range = old_range * (1 - margin)
+old_range = new_range / (1 - margin)
+
+In the case that the margin is not centered in 0, let's say, from 2 to 4, I want to shrink it to 1.8.
+
+This means that the new range is [2.2, 3.8].
+
+The inverse math is the following:
+
+new_range = old_range * (1 - margin)
+old_range = new_range / (1 - margin)
+
+0.
+"""

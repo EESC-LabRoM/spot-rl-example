@@ -19,6 +19,9 @@ from rl_deploy.orbit.orbit_constants import ORDERED_JOINT_NAMES_BASE_ISAAC
 from rl_deploy.spot.constants import (
     DEFAULT_K_Q_P,
     DEFAULT_K_QD_P,
+    JOINT_LIMITS,
+    JOINT_SOFT_LIMITS,
+    ORDERED_JOINT_NAMES_SPOT,
     ORDERED_JOINT_NAMES_SPOT_BASE,
 )
 from rl_deploy.utils.dict_tools import dict_to_list, find_ordering, reorder
@@ -70,7 +73,11 @@ class OnnxCommandGenerator:
     an onnx model and converts the output to a spot command"""
 
     def __init__(
-        self, context: OnnxControllerContext, config: OrbitConfig, policy_file_name: os.PathLike, verbose: bool
+        self,
+        context: OnnxControllerContext,
+        config: OrbitConfig,
+        policy_file_name: os.PathLike,
+        verbose: bool,
     ):
         self._context = context
         self._config = config
@@ -81,8 +88,56 @@ class OnnxCommandGenerator:
         self._init_load = None
         self.verbose = verbose
 
-        self.joints_offsets_ordered = dict_to_list(self._config.default_joints, ORDERED_JOINT_NAMES_BASE_ISAAC)
+        self.joints_offsets_ordered = dict_to_list(
+            self._config.default_joints, ORDERED_JOINT_NAMES_BASE_ISAAC
+        )
 
+        self._triggered_safety = False
+        self._safety_proto = None
+
+        self._safe_limits = self._generate_safe_limits()
+
+    def _generate_safe_limits(self):
+        """
+        Generate safe limits for each joint based on the joint limits and soft limits.
+
+        The soft limits were generated from simulated data, using the formula:
+
+        max_val, min_val = max and min needed during simulation
+        max, min = max and min of the joint limit range
+
+        middle = (max + min)/2
+        full_range = max - min
+
+        min_margin = (middle - min_val)/full_range * 2
+        max_margin = (max_val - middle)/full_range * 2
+
+        """
+        safe_limits = {}
+        for joint_name in JOINT_SOFT_LIMITS:
+            if joint_name in JOINT_LIMITS:
+                lower = JOINT_LIMITS[joint_name]["lower"]
+                upper = JOINT_LIMITS[joint_name]["upper"]
+                middle = (lower + upper) / 2
+                full_range = upper - lower
+
+                min_margin, max_margin = JOINT_SOFT_LIMITS[joint_name]
+                min_val = middle - (min_margin * full_range / 2)
+                max_val = middle + (max_margin * full_range / 2)
+
+                safe_limits[joint_name] = (min_val, max_val)
+
+        if self.verbose:
+            msg = "\nSafety Limits:\n"
+            msg += "\n".join(
+                [
+                    f"  {joint_name}: [{min_val:.3f}, {max_val:.3f}]\n"
+                    for joint_name, (min_val, max_val) in safe_limits.items()
+                ]
+            )
+            print(msg)
+
+        return safe_limits
 
     def __call__(self):
         """makes class a callable and computes model output for latest controller context
@@ -95,43 +150,83 @@ class OnnxCommandGenerator:
             self._init_pos = self._context.latest_state.joint_states.position
             self._init_load = self._context.latest_state.joint_states.load
 
+        if self._safety_proto is not None:
+            return self._safety_proto
+
         # extract observation data from latest spot state data
         input_list = self.collect_inputs(self._context.latest_state, self._config)
+
+        current_positions_map = dict(
+            zip(
+                ORDERED_JOINT_NAMES_SPOT,
+                self._context.latest_state.joint_states.position,
+            )
+        )
+
+        # Safety Check
+        self._triggered_safety = self._check_safety(current_positions_map)
+
+        if self._triggered_safety:
+            # Create hold command from current positions
+            hold_pos = [
+                current_positions_map[name] for name in ORDERED_JOINT_NAMES_SPOT_BASE
+            ]
+            proto = self.create_proto(hold_pos)
+            self._safety_proto = proto
+            return proto
+
         output = self._compute_action(input_list)
         action = self._post_process_action_to_spot(output)
 
         # # generate proto message from target joint positions
-        # proto = self.create_proto(action)
+        proto = self.create_proto(action)
 
         # cache data for history and logging
         self._last_action = output
         self._count += 1
         self._context.count += 1
 
-        return action
+        return proto
+
+    def _check_safety(self, current_positions_map):
+        for joint_name, (safe_min, safe_max) in self._safe_limits.items():
+            current_val = current_positions_map.get(joint_name)
+
+            if current_val is None:
+                print(f"[SAFETY STOP] Joint {joint_name} value is None")
+                return True
+
+            if current_val < safe_min or current_val > safe_max:
+                print(
+                    f"[SAFETY STOP] Joint {joint_name} value {current_val:.4f} outside safe range [{safe_min:.4f}, {safe_max:.4f}]"
+                )
+                return True
+
+        return False
 
     def _compute_action(self, input_list: List[float]):
         # execute model from onnx file
         input = [np.array(input_list).astype("float32")]
         output = self._inference_session.run(None, {"obs": input})[0].tolist()[0]
         return output
-    
+
     def _post_process_action_to_spot(self, output: List[float]):
         # post process model output apply action scaling and return to spots
         # joint order and offset
-        test_scale = 1 # min(0.1 * self._count, 0.2)
+        test_scale = min(0.1 * self._count, 1.0)
         scaled_output = list(map(mul, [self._config.action_scale] * 12, output))
         test_scaled = list(map(mul, [test_scale] * 12, scaled_output))
-        
+
         # set joint offsets
         shifted_output = list(map(add, test_scaled, self.joints_offsets_ordered))
 
         # reorder for spot
-        isaac_to_spot = find_ordering(ORDERED_JOINT_NAMES_BASE_ISAAC, ORDERED_JOINT_NAMES_SPOT_BASE)
+        isaac_to_spot = find_ordering(
+            ORDERED_JOINT_NAMES_BASE_ISAAC, ORDERED_JOINT_NAMES_SPOT_BASE
+        )
         reordered_output = reorder(shifted_output, isaac_to_spot)
 
         return reordered_output
-
 
     def collect_inputs(self, state: JointControlStreamRequest, config: OrbitConfig):
         """extract observation data from spots current state and format for onnx
@@ -149,9 +244,9 @@ class OnnxCommandGenerator:
         observations += self._context.velocity_cmd
         if self.verbose:
             print("[INFO] cmd", self._context.velocity_cmd)
-        observations += ob.get_joint_positions(state, config) 
-        observations += [i*0.25 for i in ob.get_joint_velocity(state)]
-        observations += [i*0.20 for i in self._last_action]
+        observations += ob.get_joint_positions(state, config)
+        observations += [i * 0.25 for i in ob.get_joint_velocity(state)]
+        observations += [i * 0.20 for i in self._last_action]
         return observations
 
     def create_proto(self, pos_command: List[float]):
