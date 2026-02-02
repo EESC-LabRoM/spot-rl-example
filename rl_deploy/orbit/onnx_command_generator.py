@@ -115,27 +115,25 @@ class OnnxCommandGenerator:
         """
         safe_limits = {}
         for joint_name in JOINT_SOFT_LIMITS:
-            if joint_name in JOINT_LIMITS:
-                lower = JOINT_LIMITS[joint_name]["lower"]
-                upper = JOINT_LIMITS[joint_name]["upper"]
-                middle = (lower + upper) / 2
-                full_range = upper - lower
+            lower = JOINT_LIMITS[joint_name]["lower"]
+            upper = JOINT_LIMITS[joint_name]["upper"]
+            middle = (lower + upper) / 2
+            full_range = upper - lower
 
-                min_margin, max_margin = JOINT_SOFT_LIMITS[joint_name]
-                min_val = middle - (min_margin * full_range / 2)
-                max_val = middle + (max_margin * full_range / 2)
+            min_margin, max_margin = JOINT_SOFT_LIMITS[joint_name]
+            min_val = middle - (min_margin * full_range / 2)
+            max_val = middle + (max_margin * full_range / 2)
 
-                safe_limits[joint_name] = (min_val, max_val)
+            safe_limits[joint_name] = (min_val, max_val)
 
-        if self.verbose:
-            msg = "\nSafety Limits:\n"
-            msg += "\n".join(
-                [
-                    f"  {joint_name}: [{min_val:.3f}, {max_val:.3f}]\n"
-                    for joint_name, (min_val, max_val) in safe_limits.items()
-                ]
-            )
-            print(msg)
+        msg = "\nSafety Limits:\n"
+        msg += "\n".join(
+            [
+                f"  {joint_name}: [{min_val:.3f}, {max_val:.3f}]\n"
+                for joint_name, (min_val, max_val) in safe_limits.items()
+            ]
+        )
+        print(msg)
 
         return safe_limits
 
@@ -201,7 +199,6 @@ class OnnxCommandGenerator:
                     f"[SAFETY STOP] Joint {joint_name} value {current_val:.4f} outside safe range [{safe_min:.4f}, {safe_max:.4f}]"
                 )
                 return True
-
         return False
 
     def _compute_action(self, input_list: List[float]):

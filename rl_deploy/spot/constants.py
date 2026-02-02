@@ -5,10 +5,12 @@
 # Development Kit License (20191101-BDSDK-SL).
 
 # https://dev.bostondynamics.com/protos/bosdyn/api/proto_reference#bosdyn-api-CombinedJointStates
+import os
 from enum import IntEnum
-import os 
-from rl_deploy.utils.urdf import parse_urdf_limits
+
 from bosdyn.api.spot import spot_constants_pb2
+
+from rl_deploy.utils.urdf import parse_urdf_limits
 
 
 class DOF(IntEnum):
@@ -116,8 +118,9 @@ def set_default_gains():
 # Initialize default gains
 set_default_gains()
 
+from pathlib import Path
 
-JOINT_LIMITS = parse_urdf_limits(os.path.join(os.path.dirname(__file__), "..", "spot", "spot_description", "urdf", "spot.urdf"))
+JOINT_LIMITS = parse_urdf_limits(os.path.join(Path(__file__).parent.parent, "spot_with_arm.urdf"))
 
 JOINT_SOFT_LIMITS = {
 "fl_hx": (0.541525, 0.629967),

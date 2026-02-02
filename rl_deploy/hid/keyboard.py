@@ -28,7 +28,7 @@ class KeyboardConfig:
 
 class Keyboard:
 
-    x_vel = 1.0
+    x_vel = 0.0
     y_vel = 0.0
     yaw = 0.0
     _stopping = False

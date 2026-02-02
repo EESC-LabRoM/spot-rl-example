@@ -71,29 +71,25 @@ class IsaacMockSpot:
 
         self._on_state_update(self._state_msg)
 
+        self.last_command = None
+
     def start_command_stream(
         self,
         command_policy: Callable[[None], JointControlStreamRequest],
-        timing_policy: Callable[[None], None],
     ):
-        self._timing_policy = timing_policy
         self._command_generator = command_policy
 
     def lease_keep_alive(self):
         return nullcontext()
 
     def command_update(self):
-        if self._timing_policy():
-            positions = self._command_generator().joint_command.position
+        positions = self._command_generator().joint_command.position
 
-            spot_to_isaac = find_ordering(
-                ORDERED_JOINT_NAMES_SPOT_BASE, ORDERED_JOINT_NAMES_BASE_ISAAC
-            )
-            reordered_output = reorder(positions, spot_to_isaac)
-
-            return torch.tensor(reordered_output).unsqueeze(0)
-        else:
-            raise Exception("IsaacMockSpot: timing policy returned False")
+        spot_to_isaac = find_ordering(
+            ORDERED_JOINT_NAMES_SPOT_BASE, ORDERED_JOINT_NAMES_BASE_ISAAC
+        )
+        reordered_output = reorder(positions, spot_to_isaac)
+        return torch.tensor(reordered_output).unsqueeze(0)
 
     def power_on(self):
         pass
