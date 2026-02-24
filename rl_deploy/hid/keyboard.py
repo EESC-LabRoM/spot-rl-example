@@ -16,9 +16,9 @@ class KeyboardConfig:
     right_key: int = pygame.K_d  # key for right movement
     yaw_left_key: int = pygame.K_q  # key for yaw left
     yaw_right_key: int = pygame.K_e  # key for yaw right
-    delta_forward_velocity: float = 0.1  # increment for forward/backward velocity
-    delta_lateral_velocity: float = 0.1  # increment for lateral velocity
-    delta_yaw_velocity: float = 0.1  # increment for yaw velocity
+    delta_forward_velocity: float = 0.5  # increment for forward/backward velocity
+    delta_lateral_velocity: float = 0.5  # increment for lateral velocity
+    delta_yaw_velocity: float = 0.5  # increment for yaw velocity
     max_forward_velocity: float = 1.0  # maximum forward velocity
     max_backward_velocity: float = 1.0  # maximum backward velocity
     max_lateral_velocity: float = 1.0  # maximum lateral velocity
@@ -28,17 +28,17 @@ class KeyboardConfig:
 
 class Keyboard:
 
-    x_vel = 0.0
-    y_vel = 0.0
-    yaw = 0.0
     _stopping = False
    
 
-    def __init__(self, context, config: KeyboardConfig = None, verbose: bool = False):
+    def __init__(self, context, config: KeyboardConfig = None, verbose: bool = False, x_vel=0.0, y_vel=0.0, yaw=0.0):
         if not pygame.get_init():
             pygame.init()
         
        
+        self.x_vel = x_vel
+        self.y_vel = y_vel
+        self.yaw = yaw
         self._context = context
         self._config = config if config is not None else KeyboardConfig()
         self._verbose = verbose
@@ -121,19 +121,19 @@ class Keyboard:
         # Forward/Backward
         if keys[self._config.forward_key]:
             self.x_vel += self._config.delta_forward_velocity
-        if keys[self._config.backward_key]:
+        elif keys[self._config.backward_key]:
             self.x_vel -= self._config.delta_forward_velocity
 
         # Left/Right (lateral)
         if keys[self._config.left_key]:
             self.y_vel += self._config.delta_lateral_velocity
-        if keys[self._config.right_key]:
+        elif keys[self._config.right_key]:
             self.y_vel -= self._config.delta_lateral_velocity
 
         # Yaw
         if keys[self._config.yaw_left_key]:
             self.yaw += self._config.delta_yaw_velocity
-        if keys[self._config.yaw_right_key]:
+        elif keys[self._config.yaw_right_key]:
             self.yaw -= self._config.delta_yaw_velocity
 
         if keys[self._config.stop_key]:

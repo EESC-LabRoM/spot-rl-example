@@ -9,6 +9,9 @@ Requires-Dist: bosdyn-choreography-client>=5.1.0
 Requires-Dist: bosdyn-client>=5.1.0
 Requires-Dist: bosdyn-mission>=5.1.0
 Requires-Dist: bosdyn-orbit>=5.1.0
+Requires-Dist: h5py>=3.10.0
+Requires-Dist: isaaclab[all,isaacsim]==2.3.2.post1
+Requires-Dist: matplotlib>=3.8.0
 Requires-Dist: onnxruntime>=1.23.2
 Requires-Dist: pygame>=2.6.1
 Requires-Dist: pyps4controller>=1.2.5

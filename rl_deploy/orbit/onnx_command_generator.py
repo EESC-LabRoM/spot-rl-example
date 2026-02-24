@@ -15,16 +15,20 @@ from bosdyn.util import seconds_to_timestamp, set_timestamp_from_now, timestamp_
 
 import rl_deploy.orbit.observations as ob
 from rl_deploy.orbit.orbit_configuration import OrbitConfig
-from rl_deploy.orbit.orbit_constants import ORDERED_JOINT_NAMES_BASE_ISAAC
+from rl_deploy.orbit.orbit_constants import (
+    ORDERED_JOINT_NAMES_ARM_ISAAC,
+    ORDERED_JOINT_NAMES_BASE_ISAAC,
+    ORDERED_JOINT_NAMES_ISAAC,
+)
 from rl_deploy.spot.constants import (
     DEFAULT_K_Q_P,
     DEFAULT_K_QD_P,
     JOINT_LIMITS,
     JOINT_SOFT_LIMITS,
     ORDERED_JOINT_NAMES_SPOT,
-    ORDERED_JOINT_NAMES_SPOT_BASE,
 )
 from rl_deploy.utils.dict_tools import dict_to_list, find_ordering, reorder
+from rl_deploy.utils.hdf5_logger import HDF5Logger
 
 
 @dataclass
@@ -78,9 +82,11 @@ class OnnxCommandGenerator:
         config: OrbitConfig,
         policy_file_name: os.PathLike,
         verbose: bool,
+        logger: HDF5Logger = None,
     ):
         self._context = context
         self._config = config
+        self.logger = logger
         self._inference_session = ort.InferenceSession(policy_file_name)
         self._last_action = [0] * 12
         self._count = 1
@@ -90,6 +96,9 @@ class OnnxCommandGenerator:
 
         self.joints_offsets_ordered = dict_to_list(
             self._config.default_joints, ORDERED_JOINT_NAMES_BASE_ISAAC
+        )
+        self.arm_offsets_ordered = dict_to_list(
+            self._config.default_joints, ORDERED_JOINT_NAMES_ARM_ISAAC
         )
 
         self._triggered_safety = False
@@ -152,7 +161,20 @@ class OnnxCommandGenerator:
             return self._safety_proto
 
         # extract observation data from latest spot state data
-        input_list = self.collect_inputs(self._context.latest_state, self._config)
+        inputs_dict = self.collect_inputs(self._context.latest_state, self._config)
+        
+        # Flatten for the onnx model
+        input_list = []
+        for key in [
+            "base_linear_velocity", 
+            "base_angular_velocity", 
+            "projected_gravity",
+            "velocity_cmd",
+            "joint_positions",
+            "joint_velocities",
+            "last_action"
+        ]:
+            input_list += inputs_dict[key]
 
         current_positions_map = dict(
             zip(
@@ -165,9 +187,10 @@ class OnnxCommandGenerator:
         self._triggered_safety = self._check_safety(current_positions_map)
 
         if self._triggered_safety:
+            print("Here")
             # Create hold command from current positions
             hold_pos = [
-                current_positions_map[name] for name in ORDERED_JOINT_NAMES_SPOT_BASE
+                current_positions_map[name] for name in ORDERED_JOINT_NAMES_SPOT
             ]
             proto = self.create_proto(hold_pos)
             self._safety_proto = proto
@@ -175,6 +198,26 @@ class OnnxCommandGenerator:
 
         output = self._compute_action(input_list)
         action = self._post_process_action_to_spot(output)
+
+        if self.logger is not None:
+            raw_state = self._context.latest_state
+            self.logger.log_state(
+                raw_base_linear_velocity=ob.get_base_linear_velocity(raw_state),
+                raw_base_angular_velocity=ob.get_base_angular_velocity(raw_state),
+                raw_projected_gravity=ob.get_projected_gravity(raw_state),
+                raw_joint_positions=ob.get_joint_positions(raw_state, self._config),
+                raw_joint_velocities=ob.get_joint_velocity(raw_state),
+                spot_current_positions=list(raw_state.joint_states.position),
+                spot_current_velocities=list(raw_state.joint_states.velocity),
+                preprocessed_base_linear_velocity=inputs_dict["base_linear_velocity"],
+                preprocessed_base_angular_velocity=inputs_dict["base_angular_velocity"],
+                preprocessed_projected_gravity=inputs_dict["projected_gravity"],
+                preprocessed_velocity_cmd=inputs_dict["velocity_cmd"],
+                preprocessed_joint_positions=inputs_dict["joint_positions"],
+                preprocessed_joint_velocities=inputs_dict["joint_velocities"],
+                preprocessed_last_action=inputs_dict["last_action"],
+                commanded_action=action,
+            )
 
         # # generate proto message from target joint positions
         proto = self.create_proto(action)
@@ -214,37 +257,40 @@ class OnnxCommandGenerator:
         scaled_output = list(map(mul, [self._config.action_scale] * 12, output))
         test_scaled = list(map(mul, [test_scale] * 12, scaled_output))
 
-        # set joint offsets
-        shifted_output = list(map(add, test_scaled, self.joints_offsets_ordered))
+        # set joint offsets for base
+        shifted_output_base = list(map(add, test_scaled, self.joints_offsets_ordered))
+        
+        shifted_output = shifted_output_base + self.arm_offsets_ordered
 
         # reorder for spot
         isaac_to_spot = find_ordering(
-            ORDERED_JOINT_NAMES_BASE_ISAAC, ORDERED_JOINT_NAMES_SPOT_BASE
+            ORDERED_JOINT_NAMES_ISAAC, ORDERED_JOINT_NAMES_SPOT
         )
         reordered_output = reorder(shifted_output, isaac_to_spot)
 
         return reordered_output
 
-    def collect_inputs(self, state: JointControlStreamRequest, config: OrbitConfig):
+    def collect_inputs(self, state: JointControlStreamRequest, config: OrbitConfig) -> dict:
         """extract observation data from spots current state and format for onnx
 
         arguments
         state -- proto msg with spots latest state
         config -- model configuration data from orbit
 
-        return list of float values ready to be passed into the model
+        return dict of isolated preprocessed observations
         """
-        observations = []
-        observations += ob.get_base_linear_velocity(state)
-        observations += ob.get_base_angular_velocity(state)
-        observations += ob.get_projected_gravity(state)
-        observations += self._context.velocity_cmd
         if self.verbose:
             print("[INFO] cmd", self._context.velocity_cmd)
-        observations += ob.get_joint_positions(state, config)
-        observations += [i * 0.25 for i in ob.get_joint_velocity(state)]
-        observations += [i * 0.20 for i in self._last_action]
-        return observations
+            
+        return {
+            "base_linear_velocity": ob.get_base_linear_velocity(state),
+            "base_angular_velocity": ob.get_base_angular_velocity(state),
+            "projected_gravity": ob.get_projected_gravity(state),
+            "velocity_cmd": self._context.velocity_cmd,
+            "joint_positions": ob.get_joint_positions(state, config),
+            "joint_velocities": [i * 0.25 for i in ob.get_joint_velocity(state)],
+            "last_action":  [i * 0.20 for i in self._last_action],
+        }
 
     def create_proto(self, pos_command: List[float]):
         """generate a proto msg for spot with a given pos_command
@@ -259,8 +305,8 @@ class OnnxCommandGenerator:
         set_timestamp_from_now(update_proto.header.request_timestamp)
         update_proto.header.client_name = "rl_example_client"
 
-        k_q_p = dict_to_list(self._config.kp, ORDERED_JOINT_NAMES_SPOT_BASE)
-        k_qd_p = dict_to_list(self._config.kd, ORDERED_JOINT_NAMES_SPOT_BASE)
+        k_q_p = dict_to_list(self._config.kp, ORDERED_JOINT_NAMES_SPOT)
+        k_qd_p = dict_to_list(self._config.kd, ORDERED_JOINT_NAMES_SPOT)
 
         N_DOF = len(pos_command)
         pos_cmd = [0] * N_DOF
@@ -302,10 +348,10 @@ class OnnxCommandGenerator:
         set_timestamp_from_now(update_proto.header.request_timestamp)
         update_proto.header.client_name = "rl_example_client"
 
-        k_q_p = DEFAULT_K_Q_P[0:12]
-        k_qd_p = DEFAULT_K_QD_P[0:12]
+        k_q_p = DEFAULT_K_Q_P[0:19]
+        k_qd_p = DEFAULT_K_QD_P[0:19]
 
-        N_DOF = 12
+        N_DOF = 19
         pos_cmd = [0] * N_DOF
         vel_cmd = [0] * N_DOF
         load_cmd = [0] * N_DOF

@@ -73,7 +73,7 @@ def get_projected_gravity(state: robot_state_pb2.RobotStateStreamResponse):
 
 
 def get_joint_positions(state: robot_state_pb2.RobotStateStreamResponse, config: OrbitConfig):
-    """get joint position from spots state update a reformat for orbit by
+    """Get joint position from spots state update a reformat for orbit by
     reordering to match orbits expectation and shifting so 0 position is the
     same as was used in training
 

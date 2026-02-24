@@ -6,6 +6,9 @@ build-backend = "setuptools.build_meta"
 where = ["."]
 include = ["rl_deploy*"]
 
+[[tool.uv.index]]
+url = "https://pypi.nvidia.com/"
+
 [project]
 name = "spot-rl-example"
 version = "0.1.0"
@@ -17,6 +20,9 @@ dependencies = [
     "bosdyn-client>=5.1.0",
     "bosdyn-mission>=5.1.0",
     "bosdyn-orbit>=5.1.0",
+    "h5py>=3.10.0",
+    "isaaclab[all,isaacsim]==2.3.2.post1",
+    "matplotlib>=3.8.0",
     "onnxruntime>=1.23.2",
     "pygame>=2.6.1",
     "pyps4controller>=1.2.5",
