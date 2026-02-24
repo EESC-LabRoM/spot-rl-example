@@ -8,10 +8,10 @@ from bosdyn.api.robot_command_pb2 import JointControlStreamRequest
 from bosdyn.api.robot_state_pb2 import RobotStateStreamResponse
 
 from rl_deploy.orbit.orbit_constants import (
-    ORDERED_JOINT_NAMES_BASE_ISAAC,
+    ORDERED_JOINT_NAMES_ISAAC,
 )
 from rl_deploy.spot.constants import (
-    ORDERED_JOINT_NAMES_SPOT_BASE,
+    ORDERED_JOINT_NAMES_SPOT,
 )
 from rl_deploy.utils.dict_tools import find_ordering, reorder
 
@@ -86,7 +86,7 @@ class IsaacMockSpot:
         positions = self._command_generator().joint_command.position
 
         spot_to_isaac = find_ordering(
-            ORDERED_JOINT_NAMES_SPOT_BASE, ORDERED_JOINT_NAMES_BASE_ISAAC
+            ORDERED_JOINT_NAMES_SPOT, ORDERED_JOINT_NAMES_ISAAC
         )
         reordered_output = reorder(positions, spot_to_isaac)
         return torch.tensor(reordered_output).unsqueeze(0)
