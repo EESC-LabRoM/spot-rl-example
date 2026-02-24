@@ -47,7 +47,9 @@ class Spot:
         self.robot = self.sdk.create_robot(config.hostname)
         bosdyn.client.util.authenticate(self.robot)
         self.robot.time_sync.wait_for_sync()
-        assert not self.robot.is_estopped(), "Robot is estopped. Please use an external E-Stop client."
+        assert not self.robot.is_estopped(), (
+            "Robot is estopped. Please use an external E-Stop client."
+        )
 
     def __del__(self):
         """clean up active streams and threads if spot goes out of scope or is deleted"""
@@ -60,8 +62,13 @@ class Spot:
 
         return scoped lease
         """
-        lease_client = self.robot.ensure_client(bosdyn.client.lease.LeaseClient.default_service_name)
-        return bosdyn.client.lease.LeaseKeepAlive(lease_client, must_acquire=True, return_at_exit=True)
+        lease_client = self.robot.ensure_client(
+            bosdyn.client.lease.LeaseClient.default_service_name
+        )
+        lease_client.take()
+        return bosdyn.client.lease.LeaseKeepAlive(
+            lease_client, must_acquire=True, return_at_exit=True
+        )
 
     def power_on(self):
         """Turn on power to robot's motors."""
@@ -78,21 +85,31 @@ class Spot:
         body_height -- controls height of standing as delta from default or 0.525m
 
         """
-        self._command_client = self.robot.ensure_client(RobotCommandClient.default_service_name)
+        self._command_client = self.robot.ensure_client(
+            RobotCommandClient.default_service_name
+        )
         # Stand the robot
-        params = RobotCommandBuilder.mobility_params(body_height, footprint_R_body=geometry.EulerZXY())
+        params = RobotCommandBuilder.mobility_params(
+            body_height, footprint_R_body=geometry.EulerZXY()
+        )
 
         blocking_stand(self._command_client, 10, 1.0, params)
 
-    def start_state_stream(self, on_state_update: Callable[[RobotStateStreamResponse], None]):
+    def start_state_stream(
+        self, on_state_update: Callable[[RobotStateStreamResponse], None]
+    ):
         """The robot state streaming client will allow us to get the robot's joint and imu information.
 
         arguments
         on_state_update -- Callable that will be called at ~333Hz with latest state data
 
         """
-        self.robot_state_streaming_client = self.robot.ensure_client(RobotStateStreamingClient.default_service_name)
-        self._state_thread = Thread(target=self._handle_state_stream, args=[on_state_update])
+        self.robot_state_streaming_client = self.robot.ensure_client(
+            RobotStateStreamingClient.default_service_name
+        )
+        self._state_thread = Thread(
+            target=self._handle_state_stream, args=[on_state_update]
+        )
         self._state_thread.start()
 
     def stop_state_stream(self):
@@ -102,7 +119,9 @@ class Spot:
             self._state_thread.join()
 
     def start_command_stream(
-        self, command_policy: Callable[[None], JointControlStreamRequest], timing_policy: Callable[[None], None]
+        self,
+        command_policy: Callable[[None], JointControlStreamRequest],
+        timing_policy: Callable[[None], None],
     ):
         """create command streamt to send joint level commands to spot
 
@@ -118,7 +137,9 @@ class Spot:
         self._activate_thread = Thread(target=self.activate)
         self._activate_thread.start()
 
-        self._command_thread = Thread(target=self._run_command_stream, args=[command_policy, timing_policy])
+        self._command_thread = Thread(
+            target=self._run_command_stream, args=[command_policy, timing_policy]
+        )
         self._command_thread.start()
 
     def stop_command_stream(self):
@@ -131,7 +152,9 @@ class Spot:
             self._activate_thread_stopping = True
             self._activate_thread.join()
 
-    def _handle_state_stream(self, on_state_update: Callable[[RobotStateStreamResponse], None]):
+    def _handle_state_stream(
+        self, on_state_update: Callable[[RobotStateStreamResponse], None]
+    ):
         """private function to be run in state stream thread
             listens for state steam events and calls users callback
 
@@ -145,7 +168,9 @@ class Spot:
                 return
 
     def _run_command_stream(
-        self, command_policy: Callable[[None], JointControlStreamRequest], timing_policy: Callable[[None], None]
+        self,
+        command_policy: Callable[[None], JointControlStreamRequest],
+        timing_policy: Callable[[None], None],
     ):
         """private function to be run in command stream thread handles opening grpc
             stream
@@ -155,7 +180,9 @@ class Spot:
         timing_policy -- callback supplied to start_command_stream to control timing
         """
 
-        self._command_streaming_client = self.robot.ensure_client(RobotCommandStreamingClient.default_service_name)
+        self._command_streaming_client = self.robot.ensure_client(
+            RobotCommandStreamingClient.default_service_name
+        )
 
         try:
             self.robot.logger.info("Starting command stream")
@@ -176,7 +203,9 @@ class Spot:
         self.robot.logger.info("Robot safely powered off.")
 
     def _command_stream_loop(
-        self, command_policy: Callable[[None], JointControlStreamRequest], timing_policy: Callable[[None], None]
+        self,
+        command_policy: Callable[[None], JointControlStreamRequest],
+        timing_policy: Callable[[None], None],
     ):
         """coroutine needed for command stream. repeatedly calls timing_policty
         to block until next dt and then yields the result of command_policy once
@@ -197,7 +226,9 @@ class Spot:
 
     # Method to activate full body joint control through RobotCommand
     def activate(self):
-        self._command_client = self.robot.ensure_client(RobotCommandClient.default_service_name)
+        self._command_client = self.robot.ensure_client(
+            RobotCommandClient.default_service_name
+        )
 
         # Wait for streaming to start
         while not self._started_streaming:

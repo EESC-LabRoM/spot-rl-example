@@ -22,11 +22,21 @@ def main():
     """Command line interface. change that is ok"""
     parser = argparse.ArgumentParser()
     bosdyn.client.util.add_base_arguments(parser)
-    parser.add_argument("policy_file_path", type=Path)
+    parser.add_argument(
+        "-policy_file_path",
+        type=Path,
+        default=Path(__file__).parent / "configs",
+        help="Path to the policy file or directory containing the policy file.",
+    )
     parser.add_argument("-m", "--mock", action="store_true")
-    parser.add_argument("--hdf5_log", type=str, default=None, help="Path to save HDF5 log of observations.")
+    parser.add_argument(
+        "--hdf5_log",
+        type=str,
+        default="spot_isaac_real.hdf5",
+        help="Path to save HDF5 log of observations.",
+    )
     options = parser.parse_args()
-    
+
     env_config = orbit.orbit_configuration.detect_config_file(options.policy_file_path)
     policy_file = orbit.orbit_configuration.detect_policy_file(options.policy_file_path)
 
@@ -36,9 +46,11 @@ def main():
     context = OnnxControllerContext()
     state_handler = StateHandler(context)
     print("Verbose option: ", options.verbose)
-    
-    logger = HDF5Logger(options.hdf5_log) if options.hdf5_log else None
-    command_generator = OnnxCommandGenerator(context, config, policy_file, options.verbose, logger=logger)
+
+    logger = HDF5Logger(options.hdf5_log)
+    command_generator = OnnxCommandGenerator(
+        context, config, policy_file, options.verbose, logger=logger
+    )
     gamepad = Keyboard(context)
     # 333 Hz state update / 6 => ~56 Hz control updates
     timeing_policy = EventDivider(context.event, 6)
@@ -68,8 +80,7 @@ def main():
             print("stop state stream")
             spot.stop_state_stream()
             print("stop game pad")
-            if logger:
-                logger.save()
+            logger.save()
 
 
 if __name__ == "__main__":

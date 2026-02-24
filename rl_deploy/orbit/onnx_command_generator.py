@@ -1,5 +1,4 @@
 # Copyright (c) 2024 Boston Dynamics AI Institute LLC. All rights reserved.
-
 import os
 from dataclasses import dataclass
 from operator import add, mul
@@ -83,10 +82,12 @@ class OnnxCommandGenerator:
         policy_file_name: os.PathLike,
         verbose: bool,
         logger: HDF5Logger = None,
+        mock: bool = False,
     ):
         self._context = context
         self._config = config
         self.logger = logger
+        self.mock = mock
         self._inference_session = ort.InferenceSession(policy_file_name)
         self._last_action = [0] * 12
         self._count = 1
@@ -102,7 +103,7 @@ class OnnxCommandGenerator:
         )
 
         self._triggered_safety = False
-        self._safety_proto = None
+        self._safety_pos = None
 
         self._safe_limits = self._generate_safe_limits()
 
@@ -157,22 +158,22 @@ class OnnxCommandGenerator:
             self._init_pos = self._context.latest_state.joint_states.position
             self._init_load = self._context.latest_state.joint_states.load
 
-        if self._safety_proto is not None:
-            return self._safety_proto
+        if self._safety_pos is not None:
+            return self.create_proto(self._safety_pos)
 
         # extract observation data from latest spot state data
         inputs_dict = self.collect_inputs(self._context.latest_state, self._config)
-        
+
         # Flatten for the onnx model
         input_list = []
         for key in [
-            "base_linear_velocity", 
-            "base_angular_velocity", 
+            "base_linear_velocity",
+            "base_angular_velocity",
             "projected_gravity",
             "velocity_cmd",
             "joint_positions",
             "joint_velocities",
-            "last_action"
+            "last_action",
         ]:
             input_list += inputs_dict[key]
 
@@ -187,16 +188,21 @@ class OnnxCommandGenerator:
         self._triggered_safety = self._check_safety(current_positions_map)
 
         if self._triggered_safety:
-            print("Here")
+            print("Triggered safety")
             # Create hold command from current positions
             hold_pos = [
                 current_positions_map[name] for name in ORDERED_JOINT_NAMES_SPOT
             ]
-            proto = self.create_proto(hold_pos)
-            self._safety_proto = proto
-            return proto
+            self._safety_pos = hold_pos
+            return self.create_proto(hold_pos)
 
-        output = self._compute_action(input_list)
+        if self.mock:
+            # Action of zeros results in default joint values after post-processing
+            mocked_action = [0.0] * 12
+            output = mocked_action
+        else:
+            output = self._compute_action(input_list)
+
         action = self._post_process_action_to_spot(output)
 
         if self.logger is not None:
@@ -207,6 +213,8 @@ class OnnxCommandGenerator:
                 raw_projected_gravity=ob.get_projected_gravity(raw_state),
                 raw_joint_positions=ob.get_joint_positions(raw_state, self._config),
                 raw_joint_velocities=ob.get_joint_velocity(raw_state),
+                raw_joint_loads=ob.get_join_load(raw_state),
+                response_timestamp=ob.get_response_timestamp(raw_state),
                 spot_current_positions=list(raw_state.joint_states.position),
                 spot_current_velocities=list(raw_state.joint_states.velocity),
                 preprocessed_base_linear_velocity=inputs_dict["base_linear_velocity"],
@@ -226,6 +234,10 @@ class OnnxCommandGenerator:
         self._last_action = output
         self._count += 1
         self._context.count += 1
+
+        if self.mock:
+            mocked_action = [0.0] * 12
+            return self.create_proto(mocked_action)
 
         return proto
 
@@ -253,13 +265,13 @@ class OnnxCommandGenerator:
     def _post_process_action_to_spot(self, output: List[float]):
         # post process model output apply action scaling and return to spots
         # joint order and offset
-        test_scale = min(0.1 * self._count, 1.0)
+        test_scale = 1.0  # min(0.1 * self._count, 1.0)
         scaled_output = list(map(mul, [self._config.action_scale] * 12, output))
         test_scaled = list(map(mul, [test_scale] * 12, scaled_output))
 
         # set joint offsets for base
         shifted_output_base = list(map(add, test_scaled, self.joints_offsets_ordered))
-        
+
         shifted_output = shifted_output_base + self.arm_offsets_ordered
 
         # reorder for spot
@@ -270,7 +282,9 @@ class OnnxCommandGenerator:
 
         return reordered_output
 
-    def collect_inputs(self, state: JointControlStreamRequest, config: OrbitConfig) -> dict:
+    def collect_inputs(
+        self, state: JointControlStreamRequest, config: OrbitConfig
+    ) -> dict:
         """extract observation data from spots current state and format for onnx
 
         arguments
@@ -281,7 +295,7 @@ class OnnxCommandGenerator:
         """
         if self.verbose:
             print("[INFO] cmd", self._context.velocity_cmd)
-            
+
         return {
             "base_linear_velocity": ob.get_base_linear_velocity(state),
             "base_angular_velocity": ob.get_base_angular_velocity(state),
@@ -289,7 +303,7 @@ class OnnxCommandGenerator:
             "velocity_cmd": self._context.velocity_cmd,
             "joint_positions": ob.get_joint_positions(state, config),
             "joint_velocities": [i * 0.25 for i in ob.get_joint_velocity(state)],
-            "last_action":  [i * 0.20 for i in self._last_action],
+            "last_action": [i * 0.20 for i in self._last_action],
         }
 
     def create_proto(self, pos_command: List[float]):

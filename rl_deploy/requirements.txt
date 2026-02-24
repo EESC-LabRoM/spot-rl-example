@@ -5,3 +5,4 @@ pygame
 pyPS4Controller
 spatialmath-python
 onnxruntime
+h5py

@@ -1,5 +1,6 @@
 # Copyright (c) 2024 Boston Dynamics AI Institute LLC. All rights reserved.
 
+from rl_deploy.orbit.orbit_constants import ORDERED_JOINT_NAMES_ARM_ISAAC
 import json
 import os
 import re
@@ -10,6 +11,7 @@ import yaml
 
 from rl_deploy.orbit.orbit_constants import ORDERED_JOINT_NAMES_ISAAC
 from rl_deploy.utils.dict_tools import dict_from_lists, set_matching
+from rl_deploy.spot.constants import DEFAULT_K_Q_P, DEFAULT_K_QD_P, DOF
 
 
 class Ref(yaml.YAMLObject):
@@ -49,27 +51,26 @@ class OrbitConfig:
 
 
 def detect_config_file(directory: os.PathLike) -> dict:
-        """find and parse json or yaml file in policy directory
+    """find and parse json or yaml file in policy directory
 
-        arguments
-        directory -- path where policy and training configuration can be found
+    arguments
+    directory -- path where policy and training configuration can be found
 
-        return dictionary from config file
-        """
-        files = [f for f in os.listdir(directory) if f.endswith("env.json")]
-        if len(files) == 1:
-            filepath = os.path.join(directory, files[0])
-            with open(filepath) as f:
-                return json.load(f)
+    return dictionary from config file
+    """
+    files = [f for f in os.listdir(directory) if f.endswith("env.json")]
+    if len(files) == 1:
+        filepath = os.path.join(directory, files[0])
+        with open(filepath) as f:
+            return json.load(f)
 
-        files = [f for f in os.listdir(directory) if f.endswith("env.yaml")]
-        if len(files) == 1:
+    files = [f for f in os.listdir(directory) if f.endswith("env.yaml")]
+    if len(files) == 1:
+        filepath = os.path.join(directory, files[0])
+        with open(filepath) as f:
+            return yaml.safe_load(f)
 
-            filepath = os.path.join(directory, files[0])
-            with open(filepath) as f:
-                return yaml.safe_load(f)
-
-        return None
+    return None
 
 
 def detect_policy_file(directory: os.PathLike) -> os.PathLike:
@@ -94,13 +95,13 @@ def load_configuration(env_config: dict) -> OrbitConfig:
 
     return OrbitConfig containing needed training configuration
     """
-    
+
     joint_kp = dict_from_lists(ORDERED_JOINT_NAMES_ISAAC, [None] * 19)
     joint_kd = dict_from_lists(ORDERED_JOINT_NAMES_ISAAC, [None] * 19)
     joint_offsets = dict_from_lists(ORDERED_JOINT_NAMES_ISAAC, [None] * 19)
 
     actuators = env_config["scene"]["robot"]["actuators"]
-    
+
     for group in actuators.keys():
         regex = re.compile(actuators[group]["joint_names_expr"][0])
 
@@ -116,6 +117,12 @@ def load_configuration(env_config: dict) -> OrbitConfig:
     action_scale = env_config["actions"]["joint_pos"]["scale"]
     standing_height = env_config["scene"]["robot"]["init_state"]["pos"][2]
 
+    # Override the arm with default values for kp, kd
+    for joint_name in ORDERED_JOINT_NAMES_ARM_ISAAC:
+        joint_kp[joint_name] = DEFAULT_K_Q_P[DOF[joint_name.upper()]]
+        joint_kd[joint_name] = DEFAULT_K_QD_P[DOF[joint_name.upper()]]
+        print(f"Setting {joint_name} kp to {joint_kp[joint_name]} and kd to {joint_kd[joint_name]}")    
+    
     return OrbitConfig(
         kp=joint_kp,
         kd=joint_kd,

@@ -72,7 +72,9 @@ def get_projected_gravity(state: robot_state_pb2.RobotStateStreamResponse):
     return gravity_base.tolist()
 
 
-def get_joint_positions(state: robot_state_pb2.RobotStateStreamResponse, config: OrbitConfig):
+def get_joint_positions(
+    state: robot_state_pb2.RobotStateStreamResponse, config: OrbitConfig
+):
     """Get joint position from spots state update a reformat for orbit by
     reordering to match orbits expectation and shifting so 0 position is the
     same as was used in training
@@ -98,3 +100,39 @@ def get_joint_velocity(state: robot_state_pb2.RobotStateStreamResponse):
     spot_to_orbit = find_ordering(ORDERED_JOINT_NAMES_SPOT, ORDERED_JOINT_NAMES_ISAAC)
     vel = reorder(state.joint_states.velocity, spot_to_orbit)
     return vel
+
+
+# Not working
+# def get_joint_acceleration(state: robot_state_pb2.RobotStateStreamResponse):
+#     """get joint acceleration from spots state update a reformat for orbit by
+#     reordering to match orbits expectation
+
+#     arguments
+#     state -- proto msg from spot containing data on the robots state
+#     """
+#     spot_to_orbit = find_ordering(ORDERED_JOINT_NAMES_SPOT, ORDERED_JOINT_NAMES_ISAAC)
+#     acc = reorder(state.joint_states.acceleration, spot_to_orbit)
+#     return acc
+
+
+def get_join_load(state: robot_state_pb2.RobotStateStreamResponse):
+    """get joint load from spots state update a reformat for orbit by
+    reordering to match orbits expectation
+
+    arguments
+    state -- proto msg from spot containing data on the robots state
+    """
+    spot_to_orbit = find_ordering(ORDERED_JOINT_NAMES_SPOT, ORDERED_JOINT_NAMES_ISAAC)
+    load = reorder(state.joint_states.load, spot_to_orbit)
+    return load
+
+
+def get_response_timestamp(state: robot_state_pb2.RobotStateStreamResponse):
+    """get timestamp from spots state update"""
+    return state.header.response_timestamp
+
+
+# Not working
+# def get_request_timestamp(state: robot_state_pb2.RobotStateStreamResponse):
+#     """get timestamp from spots state update"""
+#     return state.header.request_timestamp
