@@ -1,11 +1,12 @@
 import argparse
 import os
 import sys
-from pathlib import Path
 from operator import sub
+from pathlib import Path
 
 import h5py
 import matplotlib.pyplot as plt
+import numpy as np
 
 # allow for absolute imports from 'rl_deploy'
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -14,8 +15,8 @@ if project_root not in sys.path:
 
 from rl_deploy.orbit.orbit_configuration import (
     OrbitConfig,
-    load_configuration,
     detect_config_file,
+    load_configuration,
 )
 from rl_deploy.orbit.orbit_constants import (
     ORDERED_JOINT_NAMES_ARM_ISAAC,
@@ -79,10 +80,19 @@ def plot_dataset(name: str, datasets: dict, out_dir: Path, safety_limits=None):
     if len(first_data.shape) == 1:
         fig, ax = plt.subplots(figsize=(10, 6))
         for label, data in datasets.items():
-            ax.plot(data, label=label)
-        ax.set_title(name.replace("_", " ").title())
+            if name == "response_timestamp":
+                ax.plot(np.diff(data), label=label)
+            else:
+                ax.plot(data, label=label)
+        
+        if name == "response_timestamp":
+            ax.set_title("Response Timestamp Delta")
+            ax.set_ylabel("Delta Time")
+        else:
+            ax.set_title(name.replace("_", " ").title())
+            ax.set_ylabel("Value")
+            
         ax.set_xlabel("Time step")
-        ax.set_ylabel("Value")
         ax.legend()
     elif len(first_data.shape) == 2:
         num_dims = first_data.shape[1]
