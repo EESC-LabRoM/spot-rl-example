@@ -87,7 +87,10 @@ def plot_dataset(name: str, datasets: dict, out_dir: Path, safety_limits=None):
         
         if name == "response_timestamp":
             ax.set_title("Response Timestamp Delta")
-            ax.set_ylabel("Delta Time")
+            ax.set_ylabel("Delta Time (s)")
+        elif name.startswith("dt_"):
+            ax.set_title(name.replace("_", " ").title())
+            ax.set_ylabel("Delta Time (s)")
         else:
             ax.set_title(name.replace("_", " ").title())
             ax.set_ylabel("Value")

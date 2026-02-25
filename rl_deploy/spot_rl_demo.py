@@ -53,7 +53,7 @@ def main():
     )
     gamepad = Keyboard(context)
     # 333 Hz state update / 6 => ~56 Hz control updates
-    timeing_policy = EventDivider(context.event, 6)
+    timeing_policy = EventDivider(context, 6)
 
     if options.mock:
         spot = MockSpot()

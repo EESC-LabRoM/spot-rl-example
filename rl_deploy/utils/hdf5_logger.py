@@ -32,6 +32,12 @@ class HDF5Logger:
             "preprocessed_joint_velocities": [],
             "preprocessed_last_action": [],
             "response_timestamp": [],
+            "dt_divider_wait": [],
+            "dt_divider_to_onnx": [],
+            "dt_onnx_compute": [],
+            "dt_post_process": [],
+            "dt_total_step": [],
+            "dt_state_arrival_to_compute": [],
         }
 
     def log_state(
@@ -53,6 +59,12 @@ class HDF5Logger:
         preprocessed_last_action: List[float],
         commanded_action: List[float],
         response_timestamp: datetime.datetime,
+        dt_divider_wait: float,
+        dt_divider_to_onnx: float,
+        dt_onnx_compute: float,
+        dt_post_process: float,
+        dt_total_step: float,
+        dt_state_arrival_to_compute: float,
     ):
         """Append a single step of data to the buffers."""
         self.data["raw_base_linear_velocity"].append(raw_base_linear_velocity)
@@ -77,6 +89,12 @@ class HDF5Logger:
         self.data["preprocessed_joint_velocities"].append(preprocessed_joint_velocities)
         self.data["preprocessed_last_action"].append(preprocessed_last_action)
         self.data["commanded_action"].append(commanded_action)
+        self.data["dt_divider_wait"].append(dt_divider_wait)
+        self.data["dt_divider_to_onnx"].append(dt_divider_to_onnx)
+        self.data["dt_onnx_compute"].append(dt_onnx_compute)
+        self.data["dt_post_process"].append(dt_post_process)
+        self.data["dt_total_step"].append(dt_total_step)
+        self.data["dt_state_arrival_to_compute"].append(dt_state_arrival_to_compute)
         if self._first_timestamp is None:
             self._first_timestamp = response_timestamp
         delta_time = (response_timestamp - self._first_timestamp).total_seconds()

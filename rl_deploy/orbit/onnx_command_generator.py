@@ -1,5 +1,6 @@
 # Copyright (c) 2024 Boston Dynamics AI Institute LLC. All rights reserved.
 import os
+import time
 from dataclasses import dataclass
 from operator import add, mul
 from threading import Event
@@ -39,6 +40,8 @@ class OnnxControllerContext:
     velocity_cmd = [0, 0, 0]
     count = 0
 
+    def __post_init__(self):
+        self.timing_dict = {}
 
 class StateHandler:
     """Class to be used as callback for state stream to put state date
@@ -54,6 +57,8 @@ class StateHandler:
         arguments
         state -- proto msg from spot containing most recent data on the robots state"""
         self._context.latest_state = state
+        if hasattr(self._context, 'timing_dict'):
+            self._context.timing_dict["state_arrival"] = time.perf_counter()
         self._context.event.set()
 
 
@@ -152,6 +157,15 @@ class OnnxCommandGenerator:
 
         return proto message to be used in spots command stream
         """
+        t_start_call = time.perf_counter()
+        if hasattr(self._context, 'timing_dict'):
+            last_call = self._context.timing_dict.get("last_call_time", t_start_call)
+            dt_total_step = t_start_call - last_call
+            self._context.timing_dict["last_call_time"] = t_start_call
+            dt_divider_to_onnx = t_start_call - self._context.timing_dict.get("divider_end", t_start_call)
+            dt_state_arrival_to_compute = t_start_call - self._context.timing_dict.get("state_arrival", t_start_call)
+        else:
+            dt_total_step, dt_divider_to_onnx, dt_state_arrival_to_compute = 0.0, 0.0, 0.0
 
         # cache initial joint position when command stream starts
         if self._init_pos is None:
@@ -200,12 +214,21 @@ class OnnxCommandGenerator:
             # Action of zeros results in default joint values after post-processing
             mocked_action = [0.0] * 12
             output = mocked_action
+            t_onx_start = t_onx_end = time.perf_counter()
         else:
+            t_onx_start = time.perf_counter()
             output = self._compute_action(input_list)
+            t_onx_end = time.perf_counter()
 
+        t_post_start = time.perf_counter()
         action = self._post_process_action_to_spot(output)
+        t_post_end = time.perf_counter()
 
         if self.logger is not None:
+            dt_onnx = t_onx_end - t_onx_start
+            dt_post = t_post_end - t_post_start
+            dt_divider_wait = self._context.timing_dict.get("dt_divider_wait", 0.0) if hasattr(self._context, 'timing_dict') else 0.0
+
             raw_state = self._context.latest_state
             self.logger.log_state(
                 raw_base_linear_velocity=ob.get_base_linear_velocity(raw_state),
@@ -225,6 +248,12 @@ class OnnxCommandGenerator:
                 preprocessed_joint_velocities=inputs_dict["joint_velocities"],
                 preprocessed_last_action=inputs_dict["last_action"],
                 commanded_action=action,
+                dt_divider_wait=dt_divider_wait,
+                dt_divider_to_onnx=dt_divider_to_onnx,
+                dt_onnx_compute=dt_onnx,
+                dt_post_process=dt_post,
+                dt_total_step=dt_total_step,
+                dt_state_arrival_to_compute=dt_state_arrival_to_compute,
             )
 
         # # generate proto message from target joint positions
