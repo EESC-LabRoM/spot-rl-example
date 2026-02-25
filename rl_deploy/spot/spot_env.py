@@ -1,10 +1,11 @@
 import isaaclab.sim as sim_utils
 import isaaclab_tasks.manager_based.locomotion.velocity.mdp as mdp
+import torch
 from isaaclab.actuators import (
     DelayedPDActuatorCfg,
 )
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg
-from isaaclab.envs import ManagerBasedEnvCfg, ViewerCfg
+from isaaclab.envs import ManagerBasedEnv, ManagerBasedEnvCfg, ViewerCfg
 from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import ObservationTermCfg as ObsTerm
@@ -190,6 +191,10 @@ class SpotCommandsCfg:
         ),
     )
 
+def time(env: ManagerBasedEnv):
+    sim_time: float = env._sim_step_counter * env.step_dt
+    sim_tensor = torch.tensor(sim_time, device=env.device).unsqueeze(0)
+    return sim_tensor
 
 @configclass
 class SpotObservationsCfg:
@@ -198,6 +203,7 @@ class SpotObservationsCfg:
     @configclass
     class DeployObs(ObsGroup):
         """Observations for deploy on spot group."""
+        sim_time = ObsTerm(func=time)
 
         root_lin_vel_w = ObsTerm(
             func=mdp.root_lin_vel_w,
@@ -224,6 +230,17 @@ class SpotObservationsCfg:
         )
         joint_vel = ObsTerm(
             func=mdp.joint_vel,
+            params={
+                "asset_cfg": SceneEntityCfg(
+                    "robot",
+                    joint_names=ORDERED_JOINT_NAMES_SPOT_BASE
+                    + ORDERED_JOINT_NAMES_SPOT_ARM,
+                    preserve_order=True,
+                )
+            },
+        )
+        joint_effort = ObsTerm(
+            func=mdp.joint_effort,
             params={
                 "asset_cfg": SceneEntityCfg(
                     "robot",
@@ -288,6 +305,7 @@ class SpotObservationsCfg:
                 )
             },
         )
+
         actions = ObsTerm(func=mdp.last_action)
 
         def __post_init__(self):

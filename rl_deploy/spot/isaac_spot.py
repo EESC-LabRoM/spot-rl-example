@@ -1,5 +1,6 @@
 # Copyright (c) 2024 Boston Dynamics AI Institute LLC. All rights reserved.
 
+import datetime
 from contextlib import nullcontext
 from typing import Callable
 
@@ -39,10 +40,12 @@ class IsaacMockSpot:
         root_lin_vel_w = state["root_lin_vel_w"].cpu().tolist()[0]
         root_ang_vel_w = state["root_ang_vel_w"].cpu().tolist()[0]
         root_quat_w = state["root_quat_w"].cpu().tolist()[0]
-
-        joint_load = [0] * 19
+        joint_load = state["joint_effort"].cpu().tolist()[0]
+        sim_time = state["sim_time"].cpu().tolist()[0]
 
         self._state_msg = RobotStateStreamResponse()
+        sim_time_dt = datetime.datetime(2024, 1, 1) + datetime.timedelta(seconds=sim_time)
+        self._state_msg.header.response_timestamp.FromDatetime(sim_time_dt)
         self._state_msg.kinematic_state.odom_tform_body.rotation.w = root_quat_w[0]
         self._state_msg.kinematic_state.odom_tform_body.rotation.x = root_quat_w[1]
         self._state_msg.kinematic_state.odom_tform_body.rotation.y = root_quat_w[2]

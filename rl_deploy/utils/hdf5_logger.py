@@ -1,5 +1,6 @@
 # Copyright (c) 2024 Boston Dynamics AI Institute LLC. All rights reserved.
 
+import datetime
 import os
 from typing import Dict, List
 
@@ -12,6 +13,7 @@ class HDF5Logger:
 
     def __init__(self, log_path: str):
         self.log_path = log_path
+        self._first_timestamp = None
         self.data: Dict[str, List] = {
             "raw_base_linear_velocity": [],
             "raw_base_angular_velocity": [],
@@ -50,7 +52,7 @@ class HDF5Logger:
         preprocessed_joint_velocities: List[float],
         preprocessed_last_action: List[float],
         commanded_action: List[float],
-        response_timestamp: float,
+        response_timestamp: datetime.datetime,
     ):
         """Append a single step of data to the buffers."""
         self.data["raw_base_linear_velocity"].append(raw_base_linear_velocity)
@@ -75,7 +77,10 @@ class HDF5Logger:
         self.data["preprocessed_joint_velocities"].append(preprocessed_joint_velocities)
         self.data["preprocessed_last_action"].append(preprocessed_last_action)
         self.data["commanded_action"].append(commanded_action)
-        self.data["response_timestamp"].append(response_timestamp)
+        if self._first_timestamp is None:
+            self._first_timestamp = response_timestamp
+        delta_time = (response_timestamp - self._first_timestamp).total_seconds()
+        self.data["response_timestamp"].append(delta_time)
 
     def save(self):
         """Write all buffered data to the HDF5 file."""
