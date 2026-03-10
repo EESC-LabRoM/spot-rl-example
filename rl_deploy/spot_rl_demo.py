@@ -6,7 +6,7 @@ from pathlib import Path
 
 import bosdyn.client.util
 import orbit.orbit_configuration
-from rl_deploy.hid.keyboard import Keyboard
+from rl_deploy.hid.terminal_keyboard import TerminalKeyboard
 from rl_deploy.orbit.onnx_command_generator import (
     OnnxCommandGenerator,
     OnnxControllerContext,
@@ -51,7 +51,7 @@ def main():
     command_generator = OnnxCommandGenerator(
         context, config, policy_file, options.verbose, logger=logger
     )
-    gamepad = Keyboard(context)
+    gamepad = TerminalKeyboard(context)
     # 333 Hz state update / 6 => ~56 Hz control updates
     timeing_policy = EventDivider(context, 6)
 

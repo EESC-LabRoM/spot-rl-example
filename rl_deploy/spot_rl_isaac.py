@@ -44,7 +44,7 @@ import torch
 from isaaclab.envs import ManagerBasedEnv
 from utils.hdf5_logger import HDF5Logger
 
-from rl_deploy.hid.keyboard import Keyboard
+from rl_deploy.hid.terminal_keyboard import TerminalKeyboard
 from rl_deploy.orbit import orbit_configuration
 from rl_deploy.orbit.onnx_command_generator import (
     OnnxCommandGenerator,
@@ -75,7 +75,7 @@ def main():
     context = OnnxControllerContext()
     state_handler = StateHandler(context)
     command_generator = OnnxCommandGenerator(context, config, policy_file, False, logger=logger)
-    gamepad = Keyboard(context, x_vel=0.0, y_vel=0.0, yaw=0.0)
+    gamepad = TerminalKeyboard(context, x_vel=0.0, y_vel=0.0, yaw=0.0)
 
     spot = IsaacMockSpot()
 
@@ -87,6 +87,7 @@ def main():
     obs = obs_dict["spot"]
     spot.set_state(obs)
     spot.start_command_stream(command_generator)
+    gamepad.start_listening()
 
     for i in range(1000):
         # run everything in inference mode
@@ -98,7 +99,8 @@ def main():
             # The logger object might not have logger.log so let's log safe
             if logger and hasattr(logger, "log"):
                 logger.log(obs_dict)
-            gamepad.listen_loop()
+            
+    gamepad.stop_listening()
 
     # close the simulator
     env.close()

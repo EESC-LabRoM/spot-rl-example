@@ -37,3 +37,8 @@ pip3 install pyPS4Controller
 pip3 install spatialmath-python
 pip3 install onnxruntime
 ```
+
+# Example of mocked
+```bash
+uv run rl_deploy/spot_rl_demo.py  0000 --mock
+```

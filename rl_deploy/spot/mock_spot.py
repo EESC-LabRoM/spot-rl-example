@@ -41,10 +41,20 @@ class MockSpot:
 
     def start_state_stream(self, on_state_update: Callable[[RobotStateStreamResponse], None]):
         self._state_msg = RobotStateStreamResponse()
-        self._state_msg.kinematic_state.odom_tform_body.rotation.w = 1
-        self._state_msg.joint_states.position.extend([0] * 19)
-        self._state_msg.joint_states.velocity.extend([0] * 19)
-        self._state_msg.joint_states.load.extend([0] * 19)
+        self._state_msg.kinematic_state.odom_tform_body.rotation.w = 1.0
+        # Default positions corresponding to ORDERED_JOINT_NAMES_SPOT in constants.py
+        # Legs: fl_hx, fl_hy, fl_kn, fr_hx, fr_hy, fr_kn, hl_hx, hl_hy, hl_kn, hr_hx, hr_hy, hr_kn
+        # Arm: arm_sh0, arm_sh1, arm_el0, arm_el1, arm_wr0, arm_wr1, arm_f1x
+        default_positions = [
+            0.1, 0.9, -1.5,
+            -0.1, 0.9, -1.5,
+            0.1, 1.1, -1.5,
+            -0.1, 1.1, -1.5,
+            0.0, -3.1415, 3.1415, 1.5655, 0.0, 1.5692, 0.0
+        ]
+        self._state_msg.joint_states.position.extend(default_positions)
+        self._state_msg.joint_states.velocity.extend([0.0] * 19)
+        self._state_msg.joint_states.load.extend([0.0] * 19)
 
         self._stateUpdates = RepeatedTimer(1 / 333, on_state_update, args=[self._state_msg])
         self._stateUpdates.start()
