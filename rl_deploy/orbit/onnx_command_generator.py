@@ -254,6 +254,7 @@ class OnnxCommandGenerator:
                 dt_post_process=dt_post,
                 dt_total_step=dt_total_step,
                 dt_state_arrival_to_compute=dt_state_arrival_to_compute,
+                raw_state_proto_bytes=raw_state.SerializeToString(),
             )
 
         # # generate proto message from target joint positions

@@ -6,16 +6,16 @@ from pathlib import Path
 
 import bosdyn.client.util
 import orbit.orbit_configuration
-from hid.keyboard import Keyboard
-from orbit.onnx_command_generator import (
+from rl_deploy.hid.keyboard import Keyboard
+from rl_deploy.orbit.onnx_command_generator import (
     OnnxCommandGenerator,
     OnnxControllerContext,
     StateHandler,
 )
-from spot.mock_spot import MockSpot
-from spot.spot import Spot
-from utils.event_divider import EventDivider
-from utils.hdf5_logger import HDF5Logger
+from rl_deploy.spot.mock_spot import MockSpot
+from rl_deploy.spot.spot import Spot
+from rl_deploy.utils.event_divider import EventDivider
+from rl_deploy.utils.hdf5_logger import HDF5Logger
 
 
 def main():
