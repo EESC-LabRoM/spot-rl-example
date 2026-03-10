@@ -209,7 +209,6 @@ def main():
         for name, f in open_files.items():
             if key in f:
                 datasets[name] = f[key][:]
-        if datasets:
             print(f"Plotting {key}...")
             plot_dataset(key, datasets, out_dir, safety_limits=safety_limits)
 

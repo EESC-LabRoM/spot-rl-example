@@ -42,3 +42,8 @@ pip3 install onnxruntime
 ```bash
 uv run rl_deploy/spot_rl_demo.py  0000 --mock
 ```
+
+# Plot Acquisition Frequencies
+```bash
+uv run rl_deploy/plot_acquisition_frequencies.py --hdf5_files spot_isaac_real.hdf5
+```
