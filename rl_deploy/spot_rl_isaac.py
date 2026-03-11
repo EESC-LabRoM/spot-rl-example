@@ -51,8 +51,8 @@ from rl_deploy.orbit.onnx_command_generator import (
     OnnxControllerContext,
     StateHandler,
 )
-from rl_deploy.spot.isaac_spot import IsaacMockSpot
-from rl_deploy.spot.spot_env import SpotFlatEnvCfg
+from rl_deploy.isaaclab.isaac_spot import IsaacMockSpot
+from rl_deploy.isaaclab.spot_env import SpotFlatEnvCfg
 
 
 def main():
@@ -87,7 +87,7 @@ def main():
     obs = obs_dict["spot"]
     spot.set_state(obs)
     spot.start_command_stream(command_generator)
-    gamepad.start_listening()
+    #gamepad.start_listening()
 
     for i in range(1000):
         # run everything in inference mode
@@ -99,8 +99,9 @@ def main():
             # The logger object might not have logger.log so let's log safe
             if logger and hasattr(logger, "log"):
                 logger.log(obs_dict)
+        gamepad.listen_loop()
             
-    gamepad.stop_listening()
+    #gamepad.stop_listening()
 
     # close the simulator
     env.close()
