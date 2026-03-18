@@ -40,7 +40,7 @@ pip3 install onnxruntime
 
 # Example of mocked
 ```bash
-uv run rl_deploy/spot_rl_demo.py  0000 --mock
+uv run rl_deploy/spot_rl_demo.py  10.0.0.3 --mock
 ```
 
 # Plot Acquisition Frequencies
@@ -78,4 +78,65 @@ dt_divider_to_onnx             | 0.000005        | < 0.001
 dt_state_arrival_to_compute    | 0.001178        | < 0.002        
 dt_onnx_compute                | 0.000045        | < 0.005        
 dt_post_process                | 0.000008        | < 0.001        
+
+--- Command Key Diagnostics for spot_isaac_real.hdf5 ---
+Command key range: 51 -> 1181  (total 1131 samples)
+  [OK] user_command_key is strictly monotonic with no skips (increment = 1 everywhere)
+  [OK] state.last_command.user_command_key matches previous cmd key for all 1130 pairs
 ```
+
+The script also performs **Command Key Diagnostics** by loading the `proto_bytes` dataset (serialized `JointControlStreamRequest`):
+- **Monotonicity check**: Verifies `user_command_key` increments by exactly 1 with no skips or regressions.
+- **Cross-check with state proto**: Confirms that `state[i].last_command.user_command_key == cmd[i-1].user_command_key`, ensuring the robot acknowledges each command in sequence.
+
+# Export Command Protos to JSON
+Parse the `proto_bytes` dataset (`JointControlStreamRequest`) from an HDF5 log and save all entries as a JSON list:
+```bash
+uv run rl_deploy/utils/scripts/export_command_protos_to_json.py --hdf5_file spot_isaac_real.hdf5
+# Output: spot_isaac_real_commands.json
+```
+
+# Test Knee Actuator
+You can validate the computed values of the spot knee actuator with positional torque speed limits using the test script, which generates a plot of the limits vs requested actions.
+```bash
+uv run rl_deploy/isaaclab/test_knee_actuator.py
+```
+
+# Compare Actuator Loads
+You can plot the actual load against the predicted load from IsaacLab, as well as position and velocity errors, for each knee actuator individually. This will generate multiple plot figures in the `logs` directory.
+```bash
+uv run rl_deploy/compare_actuator_loads.py --hdf5_file spot_isaac_real.hdf5
+```
+
+# Plot All HDF5 Variables (Recursive)
+You can recursively plot all variables in an HDF5 file. This is useful for new HDF5 structures like `spot_isaac_real_v2.hdf5`.
+```bash
+uv run rl_deploy/plot_hdf5_v2.py --file spot_isaac_real_v2.hdf5
+```
+
+# Replay and Compare Simulated vs Real Trajectories
+You can replay the exact velocity commands recorded in the HDF5 log through the IsaacLab simulation and plot the resulting base velocities and key joint positions side-by-side with the real robot's telemetry. This script generates comparative plots in the `logs` directory.
+```bash
+uv run rl_deploy/replay_and_compare_sim_real.py --hdf5_file spot_isaac_real.hdf5
+```
+
+# Troubleshooting
+
+## Antigravity IDE / VS Code Python Extension Missing `pet` Binary
+If you encounter `bash: /home/.../.antigravity/extensions/ms-python.python-.../python-env-tools/bin/pet: No such file or directory` spam in your IDE terminal, you can resolve it by creating a silent dummy `pet` script in the missing directory:
+
+```bash
+# Example fix script:
+mkdir -p ~/.antigravity/extensions/ms-python.python-2026.2.0-universal/python-env-tools/bin/
+echo -e '#!/bin/bash\nexit 0' > ~/.antigravity/extensions/ms-python.python-2026.2.0-universal/python-env-tools/bin/pet
+chmod +x ~/.antigravity/extensions/ms-python.python-2026.2.0-universal/python-env-tools/bin/pet
+```
+
+# Architecture Notes
+
+## Spot Class Threading (`rl_deploy/spot/spot.py`)
+The `Spot` class uses **two threads** for concurrent gRPC streaming:
+- **`_state_thread`**: Listens for robot state updates at ~333Hz.
+- **`_command_thread`**: Sends joint commands via a streaming RPC.
+
+Joint control activation is handled inline inside the command stream generator (`_command_stream_loop`) after the first command is yielded — no separate thread is needed for this.

@@ -21,7 +21,12 @@ parser.add_argument("--task", type=str, default=None, help="Name of the task.")
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
 
-parser.add_argument("--hdf5_log", type=str, default="spot_isaac_sim.hdf5", help="Path to save HDF5 log of observations.")
+parser.add_argument(
+    "--hdf5_log",
+    type=str,
+    default="spot_isaac_sim.hdf5",
+    help="Path to save HDF5 log of observations.",
+)
 
 # parse the arguments
 args_cli = parser.parse_args()
@@ -51,8 +56,8 @@ from rl_deploy.orbit.onnx_command_generator import (
     OnnxControllerContext,
     StateHandler,
 )
-from rl_deploy.isaaclab.isaac_spot import IsaacMockSpot
-from rl_deploy.isaaclab.spot_env import SpotFlatEnvCfg
+from rl_deploy.isaaclab_spot.isaac_spot import IsaacMockSpot
+from rl_deploy.isaaclab_spot.spot_env import SpotFlatEnvCfg
 
 
 def main():
@@ -66,47 +71,44 @@ def main():
     env_cfg.scene.num_envs = 1
     env_cfg.sim.device = args_cli.device
 
-
     # wrap for video recording
     env = ManagerBasedEnv(env_cfg)
-    
+
     obs, _ = env.reset()
     logger = HDF5Logger(args_cli.hdf5_log)
     context = OnnxControllerContext()
     state_handler = StateHandler(context)
-    command_generator = OnnxCommandGenerator(context, config, policy_file, False, logger=logger)
+    command_generator = OnnxCommandGenerator(
+        context, config, policy_file, False, logger=logger
+    )
     gamepad = TerminalKeyboard(context, x_vel=0.0, y_vel=0.0, yaw=0.0)
 
     spot = IsaacMockSpot()
-
 
     # Start streams
     spot.start_state_stream(state_handler)
 
     obs_dict, _ = env.reset()
-    obs = obs_dict["spot"]
-    spot.set_state(obs)
+    spot.set_state(obs_dict["spot"])
     spot.start_command_stream(command_generator)
-    #gamepad.start_listening()
+    # gamepad.start_listening()
 
-    for i in range(1000):
+    for i in range(200_000):
         # run everything in inference mode
         with torch.inference_mode():
             actions = spot.command_update().to(env_cfg.sim.device)
-            obs_dict,  _ = env.step(actions)
-            obs = obs_dict["spot"]
-            spot.set_state(obs)
+            obs_dict, _ = env.step(actions)
+            spot.set_state(obs_dict["spot"])
             # The logger object might not have logger.log so let's log safe
             if logger and hasattr(logger, "log"):
                 logger.log(obs_dict)
         gamepad.listen_loop()
-            
-    #gamepad.stop_listening()
+
+    # gamepad.stop_listening()
 
     # close the simulator
     env.close()
     logger.save()
-
 
 
 if __name__ == "__main__":

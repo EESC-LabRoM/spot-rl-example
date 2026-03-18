@@ -43,6 +43,7 @@ class OnnxControllerContext:
     def __post_init__(self):
         self.timing_dict = {}
 
+
 class StateHandler:
     """Class to be used as callback for state stream to put state date
     into the controllers context
@@ -57,7 +58,7 @@ class StateHandler:
         arguments
         state -- proto msg from spot containing most recent data on the robots state"""
         self._context.latest_state = state
-        if hasattr(self._context, 'timing_dict'):
+        if hasattr(self._context, "timing_dict"):
             self._context.timing_dict["state_arrival"] = time.perf_counter()
         self._context.event.set()
 
@@ -100,8 +101,11 @@ class OnnxCommandGenerator:
         self._init_load = None
         self.verbose = verbose
 
+        self.joints_offsets_ordered_base = dict_to_list(
+            self._config.default_joints, ['fl_hx', 'fr_hx', 'hl_hx', 'hr_hx', 'fl_hy', 'fr_hy', 'hl_hy', 'hr_hy', 'fl_kn', 'fr_kn', 'hl_kn', 'hr_kn']#ORDERED_JOINT_NAMES_BASE_ISAAC
+        )
         self.joints_offsets_ordered = dict_to_list(
-            self._config.default_joints, ORDERED_JOINT_NAMES_BASE_ISAAC
+            self._config.default_joints, ORDERED_JOINT_NAMES_ISAAC
         )
         self.arm_offsets_ordered = dict_to_list(
             self._config.default_joints, ORDERED_JOINT_NAMES_ARM_ISAAC
@@ -109,6 +113,7 @@ class OnnxCommandGenerator:
 
         self._triggered_safety = False
         self._safety_pos = None
+
 
         self._safe_limits = self._generate_safe_limits()
 
@@ -158,14 +163,22 @@ class OnnxCommandGenerator:
         return proto message to be used in spots command stream
         """
         t_start_call = time.perf_counter()
-        if hasattr(self._context, 'timing_dict'):
+        if hasattr(self._context, "timing_dict"):
             last_call = self._context.timing_dict.get("last_call_time", t_start_call)
             dt_total_step = t_start_call - last_call
             self._context.timing_dict["last_call_time"] = t_start_call
-            dt_divider_to_onnx = t_start_call - self._context.timing_dict.get("divider_end", t_start_call)
-            dt_state_arrival_to_compute = t_start_call - self._context.timing_dict.get("state_arrival", t_start_call)
+            dt_divider_to_onnx = t_start_call - self._context.timing_dict.get(
+                "divider_end", t_start_call
+            )
+            dt_state_arrival_to_compute = t_start_call - self._context.timing_dict.get(
+                "state_arrival", t_start_call
+            )
         else:
-            dt_total_step, dt_divider_to_onnx, dt_state_arrival_to_compute = 0.0, 0.0, 0.0
+            dt_total_step, dt_divider_to_onnx, dt_state_arrival_to_compute = (
+                0.0,
+                0.0,
+                0.0,
+            )
 
         # cache initial joint position when command stream starts
         if self._init_pos is None:
@@ -185,6 +198,7 @@ class OnnxCommandGenerator:
             "base_angular_velocity",
             "projected_gravity",
             "velocity_cmd",
+            "joint_commands",
             "joint_positions",
             "joint_velocities",
             "last_action",
@@ -199,7 +213,7 @@ class OnnxCommandGenerator:
         )
 
         # Safety Check
-        self._triggered_safety = self._check_safety(current_positions_map)
+        self._triggered_safety = False  # self._check_safety(current_positions_map)
 
         if self._triggered_safety:
             print("Triggered safety")
@@ -224,17 +238,24 @@ class OnnxCommandGenerator:
         action = self._post_process_action_to_spot(output)
         t_post_end = time.perf_counter()
 
+        # generate proto message from target joint positions
+        proto = self.create_proto(action)
+
         if self.logger is not None:
             dt_onnx = t_onx_end - t_onx_start
             dt_post = t_post_end - t_post_start
-            dt_divider_wait = self._context.timing_dict.get("dt_divider_wait", 0.0) if hasattr(self._context, 'timing_dict') else 0.0
+            dt_divider_wait = (
+                self._context.timing_dict.get("dt_divider_wait", 0.0)
+                if hasattr(self._context, "timing_dict")
+                else 0.0
+            )
 
             raw_state = self._context.latest_state
             self.logger.log_state(
                 raw_base_linear_velocity=ob.get_base_linear_velocity(raw_state),
                 raw_base_angular_velocity=ob.get_base_angular_velocity(raw_state),
                 raw_projected_gravity=ob.get_projected_gravity(raw_state),
-                raw_joint_positions=ob.get_joint_positions(raw_state, self._config),
+                raw_joint_positions=ob.get_joint_positions(raw_state, self.joints_offsets_ordered),
                 raw_joint_velocities=ob.get_joint_velocity(raw_state),
                 raw_joint_loads=ob.get_join_load(raw_state),
                 response_timestamp=ob.get_response_timestamp(raw_state),
@@ -255,10 +276,8 @@ class OnnxCommandGenerator:
                 dt_total_step=dt_total_step,
                 dt_state_arrival_to_compute=dt_state_arrival_to_compute,
                 raw_state_proto_bytes=raw_state.SerializeToString(),
+                proto_bytes=proto.SerializeToString(),
             )
-
-        # # generate proto message from target joint positions
-        proto = self.create_proto(action)
 
         # cache data for history and logging
         self._last_action = output
@@ -294,19 +313,22 @@ class OnnxCommandGenerator:
 
     def _post_process_action_to_spot(self, output: List[float]):
         # post process model output apply action scaling and return to spots
-        # joint order and offset
-        test_scale = 1.0  # min(0.1 * self._count, 1.0)
+        # TODO: test with rampup scaling commands
         scaled_output = list(map(mul, [self._config.action_scale] * 12, output))
-        test_scaled = list(map(mul, [test_scale] * 12, scaled_output))
 
         # set joint offsets for base
-        shifted_output_base = list(map(add, test_scaled, self.joints_offsets_ordered))
-
+        shifted_output_base = list(map(add, scaled_output, self.joints_offsets_ordered_base))
         shifted_output = shifted_output_base + self.arm_offsets_ordered
 
         # reorder for spot
         isaac_to_spot = find_ordering(
-            ORDERED_JOINT_NAMES_ISAAC, ORDERED_JOINT_NAMES_SPOT
+            ['fl_hx', 'fr_hx', 'hl_hx', 'hr_hx', 'fl_hy', 'fr_hy', 'hl_hy', 'hr_hy', 'fl_kn', 'fr_kn', 'hl_kn', 'hr_kn', "arm_sh0",
+    "arm_sh1",
+    "arm_el0",
+    "arm_el1",
+    "arm_wr0",
+    "arm_wr1",
+    "arm_f1x",], ORDERED_JOINT_NAMES_SPOT
         )
         reordered_output = reorder(shifted_output, isaac_to_spot)
 
@@ -331,9 +353,10 @@ class OnnxCommandGenerator:
             "base_angular_velocity": ob.get_base_angular_velocity(state),
             "projected_gravity": ob.get_projected_gravity(state),
             "velocity_cmd": self._context.velocity_cmd,
-            "joint_positions": ob.get_joint_positions(state, config),
-            "joint_velocities": [i * 0.25 for i in ob.get_joint_velocity(state)],
-            "last_action": [i * 0.20 for i in self._last_action],
+            "joint_commands": ob.generate_joint_commands(state),
+            "joint_positions": ob.get_joint_positions(state, self.joints_offsets_ordered),
+            "joint_velocities": ob.get_joint_velocity(state),
+            "last_action": self._last_action,
         }
 
     def create_proto(self, pos_command: List[float]):
@@ -346,6 +369,8 @@ class OnnxCommandGenerator:
         """
 
         update_proto = robot_command_pb2.JointControlStreamRequest()
+        update_proto.Clear()
+
         set_timestamp_from_now(update_proto.header.request_timestamp)
         update_proto.header.client_name = "rl_example_client"
 
@@ -363,7 +388,7 @@ class OnnxCommandGenerator:
             load_cmd[joint_ind] = 0
 
         # Fill in gains the first dt
-        if self._count == 1:
+        if self._count <= 3:
             update_proto.joint_command.gains.k_q_p.extend(k_q_p)
             update_proto.joint_command.gains.k_qd_p.extend(k_qd_p)
 

@@ -1,6 +1,15 @@
+from __future__ import annotations
+
+import torch
+from isaaclab.managers.recorder_manager import (
+    RecorderManagerBaseCfg,
+    RecorderTerm,
+    RecorderTermCfg,
+)
+from isaaclab.utils import configclass
+
 import isaaclab.sim as sim_utils
 import isaaclab_tasks.manager_based.locomotion.velocity.mdp as mdp
-import torch
 from isaaclab.actuators import (
     DelayedPDActuatorCfg,
 )
@@ -15,12 +24,15 @@ from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR, ISAACLAB_NUCLEUS_DIR
+from datetime import datetime
+
 
 from rl_deploy.spot.constants import (
     ORDERED_JOINT_NAMES_SPOT_ARM,
     ORDERED_JOINT_NAMES_SPOT_BASE,
+    ORDERED_JOINT_NAMES_SPOT
 )
-from rl_deploy.isaaclab.isaac_model import (
+from rl_deploy.isaaclab_spot.isaac_model import (
     ARM_ARMATURE,
     ARM_DAMPING,
     ARM_EFFORT_LIMIT,
@@ -31,8 +43,8 @@ from rl_deploy.isaaclab.isaac_model import (
     JOINT_PARAMETER_LOOKUP_TABLE,
     KNEE_DAMPING,
     KNEE_STIFFNESS,
+    SPOT_DEFAULT_JOINT_POS,
     SPOT_DEFAULT_POS,
-    SPOT_STOWED_JOINT_POS,
     SpotKneeActuatorCfg,
 )
 
@@ -65,7 +77,7 @@ SPOT_ARM_CFG = ArticulationCfg(
     ),
     init_state=ArticulationCfg.InitialStateCfg(
         pos=SPOT_DEFAULT_POS,
-        joint_pos=SPOT_STOWED_JOINT_POS,
+        joint_pos=SPOT_DEFAULT_JOINT_POS,
         joint_vel={".*": 0.0},
     ),
     actuators={
@@ -160,15 +172,7 @@ class SpotActionsDeployCfg:
 
     joint_pos = mdp.JointPositionActionCfg(
         asset_name="robot",
-        joint_names=ORDERED_JOINT_NAMES_SPOT_BASE,
-        scale=1,
-        use_default_offset=False,
-        preserve_order=True,
-    )
-
-    arm_joint_pos = mdp.JointPositionActionCfg(
-        asset_name="robot",
-        joint_names=ORDERED_JOINT_NAMES_SPOT_ARM,
+        joint_names=ORDERED_JOINT_NAMES_SPOT,
         scale=1,
         use_default_offset=False,
         preserve_order=True,
@@ -191,39 +195,54 @@ class SpotCommandsCfg:
         ),
     )
 
-def time(env: ManagerBasedEnv):
+
+def time_(env: ManagerBasedEnv):
     sim_time: float = env._sim_step_counter * env.step_dt
-    sim_tensor = torch.tensor(sim_time, device=env.device).unsqueeze(0)
+    sim_tensor = torch.tensor([sim_time], device=env.device).repeat(env.num_envs, 1)
     return sim_tensor
+
+
+def default_joint_pos(env, asset_cfg):
+    asset = env.scene[asset_cfg.name]
+    return asset.data.default_joint_pos[:, asset_cfg.joint_ids]
+
+
+def joint_ids(env, asset_cfg):
+    return torch.tensor(asset_cfg.joint_ids).unsqueeze(0)
+
 
 @configclass
 class SpotObservationsCfg:
     """Observation specifications for the MDP."""
 
     @configclass
-    class DeployObs(ObsGroup):
-        """Observations for deploy on spot group."""
-        sim_time = ObsTerm(func=time)
+    class SpotObs(ObsGroup):
+        """Observations for spot group."""
+        
+        sim_time = ObsTerm(func=time_)
+
 
         root_lin_vel_w = ObsTerm(
             func=mdp.root_lin_vel_w,
             params={"asset_cfg": SceneEntityCfg("robot")},
         )
+        
         root_ang_vel_w = ObsTerm(
             func=mdp.root_ang_vel_w,
             params={"asset_cfg": SceneEntityCfg("robot")},
         )
+        
         root_quat_w = ObsTerm(
             func=mdp.root_quat_w,
             params={"asset_cfg": SceneEntityCfg("robot")},
         )
+        
         joint_pos = ObsTerm(
             func=mdp.joint_pos,
             params={
                 "asset_cfg": SceneEntityCfg(
                     "robot",
-                    joint_names=ORDERED_JOINT_NAMES_SPOT_BASE
-                    + ORDERED_JOINT_NAMES_SPOT_ARM,
+                    joint_names=ORDERED_JOINT_NAMES_SPOT,
                     preserve_order=True,
                 )
             },
@@ -233,23 +252,30 @@ class SpotObservationsCfg:
             params={
                 "asset_cfg": SceneEntityCfg(
                     "robot",
-                    joint_names=ORDERED_JOINT_NAMES_SPOT_BASE
-                    + ORDERED_JOINT_NAMES_SPOT_ARM,
+                    joint_names=ORDERED_JOINT_NAMES_SPOT,
                     preserve_order=True,
                 )
             },
         )
+
         joint_effort = ObsTerm(
             func=mdp.joint_effort,
             params={
                 "asset_cfg": SceneEntityCfg(
                     "robot",
-                    joint_names=ORDERED_JOINT_NAMES_SPOT_BASE
-                    + ORDERED_JOINT_NAMES_SPOT_ARM,
+                    joint_names=ORDERED_JOINT_NAMES_SPOT,
                     preserve_order=True,
                 )
             },
         )
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = False
+
+    @configclass
+    class DebugObs(ObsGroup):
+        """Observations for deploy on spot group."""
+
         # `` observation terms (order preserved)
         base_lin_vel = ObsTerm(
             func=mdp.base_lin_vel,
@@ -268,52 +294,51 @@ class SpotObservationsCfg:
             params={
                 "asset_cfg": SceneEntityCfg(
                     "robot",
-                    joint_names=ORDERED_JOINT_NAMES_SPOT_BASE,
+                    joint_names=ORDERED_JOINT_NAMES_SPOT,
                     preserve_order=True,
                 )
             },
         )
-        arm_joint_pos = ObsTerm(
-            func=mdp.joint_pos_rel,
-            params={
-                "asset_cfg": SceneEntityCfg(
-                    "robot",
-                    joint_names=ORDERED_JOINT_NAMES_SPOT_ARM,
-                    preserve_order=True,
-                )
-            },
-        )
-
         joint_vel_rel = ObsTerm(
             func=mdp.joint_vel_rel,
             params={
                 "asset_cfg": SceneEntityCfg(
                     "robot",
-                    joint_names=ORDERED_JOINT_NAMES_SPOT_BASE,
+                    joint_names=ORDERED_JOINT_NAMES_SPOT,
                     preserve_order=True,
                 )
             },
         )
 
-        arm_joint_vel = ObsTerm(
-            func=mdp.joint_vel_rel,
+        default_joint_pos = ObsTerm(
+            func=default_joint_pos,
             params={
                 "asset_cfg": SceneEntityCfg(
                     "robot",
-                    joint_names=ORDERED_JOINT_NAMES_SPOT_ARM,
+                    joint_names=ORDERED_JOINT_NAMES_SPOT,
                     preserve_order=True,
                 )
             },
         )
 
-        actions = ObsTerm(func=mdp.last_action)
+        joint_ids = ObsTerm(
+            func=joint_ids,
+            params={
+                "asset_cfg": SceneEntityCfg(
+                    "robot",
+                    joint_names=ORDERED_JOINT_NAMES_SPOT,
+                    preserve_order=True,
+                )
+            },
+        )
 
         def __post_init__(self):
             self.enable_corruption = False
             self.concatenate_terms = False
 
     # observation groups
-    spot: DeployObs = DeployObs()
+    spot: SpotObs = SpotObs()
+    debug: DebugObs = DebugObs()
 
 
 @configclass
@@ -366,9 +391,110 @@ class SpotEventCfg:
     reset_to_default = EventTerm(func=mdp.reset_scene_to_default, mode="reset")
 
 
+# Copyright (c) 2022-2025, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+# All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+
+class PostStepStatesRecorder(RecorderTerm):
+    """Recorder term that records the state of the environment at the end of each step."""
+
+    def record_post_step(self):
+        return "states", self._env.scene.get_state(is_relative=True)
+
+
+class PreStepActionsRecorder(RecorderTerm):
+    """Recorder term that records the actions in the beginning of each step."""
+
+    def record_pre_step(self):
+        return "actions", self._env.action_manager.action
+
+
+class PreStepFlatPolicyObservationsRecorder(RecorderTerm):
+    """Recorder term that records the policy group observations in each step."""
+
+    def record_pre_step(self):
+        return "obs", self._env.obs_buf["spot"]  | self._env.obs_buf["debug"]
+
+
+class PostStepProcessedActionsRecorder(RecorderTerm):
+    """Recorder term that records processed actions at the end of each step."""
+
+    def record_post_step(self):
+        processed_actions = None
+
+        # Loop through active terms and concatenate their processed actions
+        for term_name in self._env.action_manager.active_terms:
+            term_actions = self._env.action_manager.get_term(
+                term_name
+            ).processed_actions.clone()
+            if processed_actions is None:
+                processed_actions = term_actions
+            else:
+                processed_actions = torch.cat([processed_actions, term_actions], dim=-1)
+
+        return "processed_actions", processed_actions
+
+
+##
+# State recorders.
+##
+
+
+@configclass
+class PostStepStatesRecorderCfg(RecorderTermCfg):
+    """Configuration for the step state recorder term."""
+
+    class_type: type[RecorderTerm] = PostStepStatesRecorder
+
+
+@configclass
+class PreStepActionsRecorderCfg(RecorderTermCfg):
+    """Configuration for the step action recorder term."""
+
+    class_type: type[RecorderTerm] = PreStepActionsRecorder
+
+
+@configclass
+class PreStepFlatPolicyObservationsRecorderCfg(RecorderTermCfg):
+    """Configuration for the step policy observation recorder term."""
+
+    class_type: type[RecorderTerm] = PreStepFlatPolicyObservationsRecorder
+
+
+@configclass
+class PostStepProcessedActionsRecorderCfg(RecorderTermCfg):
+    """Configuration for the post step processed actions recorder term."""
+
+    class_type: type[RecorderTerm] = PostStepProcessedActionsRecorder
+
+
+##
+# Recorder manager configurations.
+##
+
+
+@configclass
+class ActionStateRecorderManagerCfg(RecorderManagerBaseCfg):
+    """Recorder configurations for recording actions and states."""
+
+    record_post_step_states = PostStepStatesRecorderCfg()
+    record_pre_step_actions = PreStepActionsRecorderCfg()
+    record_pre_step_flat_policy_observations = (
+        PreStepFlatPolicyObservationsRecorderCfg()
+    )
+    record_post_step_processed_actions = PostStepProcessedActionsRecorderCfg()
+    dataset_export_dir_path: str = "datasets"
+    dataset_filename: str = (
+        f"isaac_spot_dataset_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+    )
+    export_in_close = True
+
+
 @configclass
 class SpotFlatEnvCfg(ManagerBasedEnvCfg):
-    scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=2.5)
+    scene: MySceneCfg = MySceneCfg(num_envs=1, env_spacing=2.5)
 
     curriculum = None
 
@@ -384,13 +510,14 @@ class SpotFlatEnvCfg(ManagerBasedEnvCfg):
     viewer = ViewerCfg(
         eye=(5.0, 5.0, 5.0), origin_type="asset_root", env_index=0, asset_name="robot"
     )
+    recorders = ActionStateRecorderManagerCfg()
 
     def __post_init__(self):
         # post init of parent
-        self.decimation = 4  # 50 Hz
+        self.sim.dt = 0.002  # 200 Hz from 500hz
+        self.decimation = 10  # 50 Hz
         self.episode_length_s = 20.0
         # simulation settings
-        self.sim.dt = 0.005  # 200 Hz from 500hz
         self.sim.render_interval = self.decimation
         self.sim.physics_material.static_friction = 1.0
         self.sim.physics_material.dynamic_friction = 1.0

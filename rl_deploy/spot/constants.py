@@ -41,17 +41,31 @@ class DOF(IntEnum):
     # DOF count for all DOF on robot (arms and legs).
     N_DOF = 19
 
+
+# the reference is https://dev.bostondynamics.com/protos/bosdyn/api/proto_reference#jointindex
 ORDERED_JOINT_NAMES_SPOT_BASE = [
-    member.name.lower()
-    for member in sorted(DOF, key=lambda x: x.value)
-    if member.name not in ["N_DOF_LEGS", "N_DOF"] and not member.name.startswith("ARM_")
+    "fl_hx",
+    "fl_hy",
+    "fl_kn",
+    "fr_hx",
+    "fr_hy",
+    "fr_kn",
+    "hl_hx",
+    "hl_hy",
+    "hl_kn",
+    "hr_hx",
+    "hr_hy",
+    "hr_kn",
 ]
 
-print("SPOT BASE", ORDERED_JOINT_NAMES_SPOT_BASE)
 ORDERED_JOINT_NAMES_SPOT_ARM = [
-    member.name.lower()
-    for member in sorted(DOF, key=lambda x: x.value)
-    if member.name.startswith("ARM_")
+    "arm_sh0",
+    "arm_sh1",
+    "arm_el0",
+    "arm_el1",
+    "arm_wr0",
+    "arm_wr1",
+    "arm_f1x",
 ]
 
 
@@ -120,18 +134,20 @@ set_default_gains()
 
 from pathlib import Path
 
-JOINT_LIMITS = parse_urdf_limits(os.path.join(Path(__file__).parent.parent, "spot_with_arm.urdf"))
+JOINT_LIMITS = parse_urdf_limits(
+    os.path.join(Path(__file__).parent.parent, "spot_with_arm.urdf")
+)
 
 JOINT_SOFT_LIMITS = {
     "fl_hx": (0.90, 0.90),
     "fl_hy": (0.90, 0.90),
-    "fl_kn": (0.90, 1.0),
+    "fl_kn": (1.0, 1.0),
     "fr_hx": (0.90, 0.90),
     "fr_hy": (0.90, 0.90),
     "fr_kn": (0.90, 1.0),
     "hl_hx": (0.90, 0.90),
     "hl_hy": (0.90, 0.90),
-    "hl_kn": (0.90, 0.90),
+    "hl_kn": (0.90, 1.0),
     "hr_hx": (0.90, 0.90),
     "hr_hy": (0.90, 0.90),
     "hr_kn": (0.90, 0.90),
@@ -144,7 +160,7 @@ Let's say my joint goes from -1 to 1.
 I want to safely shrink this range by 10% margin each side.
 
 In another words, the full range is 2, and I want to shrink it to 1.8.
-
+[ 0.1200, -0.1200,  0.1200, -0.1200,  0.5000,  0.5000,  0.5000,  0.5000, -1.0000, -1.0000, -1.0000, -1.0000]
 This means that the new range is [-0.9, 0.9].
 
 The inverse math is the following:

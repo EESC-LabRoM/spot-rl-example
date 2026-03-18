@@ -39,6 +39,7 @@ class HDF5Logger:
             "dt_total_step": [],
             "dt_state_arrival_to_compute": [],
             "raw_state_proto_bytes": [],
+            "proto_bytes": [],
         }
 
     def log_state(
@@ -67,6 +68,7 @@ class HDF5Logger:
         dt_total_step: float,
         dt_state_arrival_to_compute: float,
         raw_state_proto_bytes: bytes,
+        proto_bytes: bytes,
     ):
         """Append a single step of data to the buffers."""
         self.data["raw_base_linear_velocity"].append(raw_base_linear_velocity)
@@ -102,6 +104,7 @@ class HDF5Logger:
         delta_time = (response_timestamp - self._first_timestamp).total_seconds()
         self.data["response_timestamp"].append(delta_time)
         self.data["raw_state_proto_bytes"].append(raw_state_proto_bytes)
+        self.data["proto_bytes"].append(proto_bytes)
 
     def save(self):
         """Write all buffered data to the HDF5 file."""
@@ -115,7 +118,7 @@ class HDF5Logger:
         with h5py.File(self.log_path, "w") as f:
             for key, val in self.data.items():
                 if len(val) > 0:
-                    if key == "raw_state_proto_bytes":
+                    if key == "raw_state_proto_bytes" or key == "proto_bytes":
                         # Convert bytes strings into variable length numpy arrays of uint8
                         byte_arrays = [np.frombuffer(b, dtype=np.uint8) for b in val]
                         ds = f.create_dataset(key, (len(val),), dtype=vlen_bytes_dtype)
