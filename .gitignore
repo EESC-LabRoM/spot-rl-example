@@ -1,3 +1,5 @@
 *.pyc
 models/
 logs/
+*.hdf5
+*.png
