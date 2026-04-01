@@ -26,5 +26,6 @@ dependencies = [
     "onnxruntime>=1.23.2",
     "pygame>=2.6.1",
     "pyps4controller>=1.2.5",
+    "rosbags>=0.11.0",
     "spatialmath-python>=1.1.15",
 ]

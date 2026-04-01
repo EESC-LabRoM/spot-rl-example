@@ -50,7 +50,7 @@ class OrbitConfig:
     action_scale: float
 
 
-def detect_config_file(directory: os.PathLike) -> dict:
+def detect_config_file(directory: os.PathLike | str) -> dict | None:
     """find and parse json or yaml file in policy directory
 
     arguments
@@ -73,7 +73,7 @@ def detect_config_file(directory: os.PathLike) -> dict:
     return None
 
 
-def detect_policy_file(directory: os.PathLike) -> os.PathLike:
+def detect_policy_file(directory: os.PathLike | str) -> str| None:
     """find onnx file in policy directory
 
     arguments

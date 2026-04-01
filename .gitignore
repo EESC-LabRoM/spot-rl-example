@@ -3,3 +3,5 @@ models/
 logs/
 *.hdf5
 *.png
+*.egg-info
+rosbag*

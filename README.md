@@ -1,3 +1,7 @@
+## Docker
+```bash
+docker compose -f docker/docker-compose.yaml up -d
+```
 # Spot-RL
 Code & Dockerfile for Spot Reinforcement Learning demo
 
@@ -41,6 +45,7 @@ pip3 install onnxruntime
 # Example of mocked
 ```bash
 uv run rl_deploy/spot_rl_demo.py  10.0.0.3 --mock
+uv run rl_deploy/spot_rl_isaac.py
 ```
 
 # Plot Acquisition Frequencies
@@ -118,6 +123,11 @@ uv run rl_deploy/plot_hdf5_v2.py --file spot_isaac_real_v2.hdf5
 You can replay the exact velocity commands recorded in the HDF5 log through the IsaacLab simulation and plot the resulting base velocities and key joint positions side-by-side with the real robot's telemetry. This script generates comparative plots in the `logs` directory.
 ```bash
 uv run rl_deploy/replay_and_compare_sim_real.py --hdf5_file spot_isaac_real.hdf5
+```
+
+# Play relic 
+```bash
+uv run rl_deploy/relic/play.py
 ```
 
 # Troubleshooting

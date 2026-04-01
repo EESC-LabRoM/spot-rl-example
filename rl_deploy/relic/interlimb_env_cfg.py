@@ -639,6 +639,106 @@ SPOT_ARM_CFG = ArticulationCfg(
     },
 )
 
+
+##
+# State recorders.
+##
+
+
+class PostStepStatesRecorder(RecorderTerm):
+    """Recorder term that records the state of the environment at the end of each step."""
+
+    def record_post_step(self):
+        return "states", self._env.scene.get_state(is_relative=True)
+
+
+class PreStepActionsRecorder(RecorderTerm):
+    """Recorder term that records the actions in the beginning of each step."""
+
+    def record_pre_step(self):
+        return "actions", {
+            "actions": self._env.action_manager.action,
+            "leg_processed_actions": self._env.action_manager.get_term("joint_pos").processed_actions,
+            "arm_processed_actions": self._env.action_manager.get_term("joint_pos").arm_processed_actions,
+        }
+
+class PreStepFlatPolicyObservationsRecorder(RecorderTerm):
+    """Recorder term that records the policy group observations in each step."""
+
+    def record_pre_step(self):
+        return "obs", self._env.obs_buf
+
+
+class PostStepProcessedActionsRecorder(RecorderTerm):
+    """Recorder term that records processed actions at the end of each step."""
+
+    def record_post_step(self):
+        processed_actions = None
+
+        # Loop through active terms and concatenate their processed actions
+        for term_name in self._env.action_manager.active_terms:
+            term_actions = self._env.action_manager.get_term(
+                term_name
+            ).processed_actions.clone()
+            if processed_actions is None:
+                processed_actions = term_actions
+            else:
+                processed_actions = torch.cat([processed_actions, term_actions], dim=-1)
+
+        return "processed_actions", processed_actions
+
+
+@configclass
+class PostStepStatesRecorderCfg(RecorderTermCfg):
+    """Configuration for the step state recorder term."""
+
+    class_type: type[RecorderTerm] = PostStepStatesRecorder
+
+
+@configclass
+class PreStepActionsRecorderCfg(RecorderTermCfg):
+    """Configuration for the step action recorder term."""
+
+    class_type: type[RecorderTerm] = PreStepActionsRecorder
+
+
+@configclass
+class PreStepFlatPolicyObservationsRecorderCfg(RecorderTermCfg):
+    """Configuration for the step policy observation recorder term."""
+
+    class_type: type[RecorderTerm] = PreStepFlatPolicyObservationsRecorder
+
+
+@configclass
+class PostStepProcessedActionsRecorderCfg(RecorderTermCfg):
+    """Configuration for the post step processed actions recorder term."""
+
+    class_type: type[RecorderTerm] = PostStepProcessedActionsRecorder
+
+
+##
+# Recorder manager configurations.
+##
+
+
+@configclass
+class ActionStateRecorderManagerCfg(RecorderManagerBaseCfg):
+    """Recorder configurations for recording actions and states."""
+
+    record_post_step_states = PostStepStatesRecorderCfg()
+    record_pre_step_actions = PreStepActionsRecorderCfg()
+    record_pre_step_flat_policy_observations = (
+        PreStepFlatPolicyObservationsRecorderCfg()
+    )
+    record_post_step_processed_actions = PostStepProcessedActionsRecorderCfg()
+    dataset_export_dir_path: str = "datasets"
+    dataset_filename: str = (
+        f"isaac_spot_dataset_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+    )
+    export_in_close = True
+
+
+
 ########################################################
 # Pre-defined configs
 ########################################################
@@ -1200,6 +1300,13 @@ def time_(env: ManagerBasedEnv):
     sim_tensor = torch.tensor([sim_time], device=env.device).repeat(env.num_envs, 1)
     return sim_tensor
 
+def generated_commands(env: ManagerBasedRLEnv, command_name: str | None = None, debug=False) -> torch.Tensor:
+    """The generated command from command term in the command manager with the given name."""
+    values =  env.command_manager.get_command(command_name)
+    if debug:
+        print(f"Generated command for {command_name}: ", values[0])
+    return values
+
 @configclass
 class ObservationsCfg:
     """Observation specifications for the MDP."""
@@ -1280,8 +1387,8 @@ class ObservationsCfg:
             func=isaac_mdp.generated_commands, params={"command_name": "base_velocity"}
         )
         commands = ObsTerm(
-            func=isaac_mdp.generated_commands,
-            params={"command_name": "arm_leg_joint_base_pose"},
+            func=generated_commands,
+            params={"command_name": "arm_leg_joint_base_pose", "debug": True},
         )
         joint_pos = ObsTerm(
             func=isaac_mdp.joint_pos_rel,
@@ -1381,104 +1488,6 @@ class TerminationsCfg:
 ########################################################
 # Environment configuration
 ########################################################
-
-
-class PostStepStatesRecorder(RecorderTerm):
-    """Recorder term that records the state of the environment at the end of each step."""
-
-    def record_post_step(self):
-        return "states", self._env.scene.get_state(is_relative=True)
-
-
-class PreStepActionsRecorder(RecorderTerm):
-    """Recorder term that records the actions in the beginning of each step."""
-
-    def record_pre_step(self):
-        return "actions", {
-            "actions": self._env.action_manager.action,
-            "leg_processed_actions": self._env.action_manager.get_term("joint_pos").processed_actions,
-            "arm_processed_actions": self._env.action_manager.get_term("joint_pos").arm_processed_actions,
-        }
-
-class PreStepFlatPolicyObservationsRecorder(RecorderTerm):
-    """Recorder term that records the policy group observations in each step."""
-
-    def record_pre_step(self):
-        return "obs", self._env.obs_buf
-
-
-class PostStepProcessedActionsRecorder(RecorderTerm):
-    """Recorder term that records processed actions at the end of each step."""
-
-    def record_post_step(self):
-        processed_actions = None
-
-        # Loop through active terms and concatenate their processed actions
-        for term_name in self._env.action_manager.active_terms:
-            term_actions = self._env.action_manager.get_term(
-                term_name
-            ).processed_actions.clone()
-            if processed_actions is None:
-                processed_actions = term_actions
-            else:
-                processed_actions = torch.cat([processed_actions, term_actions], dim=-1)
-
-        return "processed_actions", processed_actions
-
-
-##
-# State recorders.
-##
-
-
-@configclass
-class PostStepStatesRecorderCfg(RecorderTermCfg):
-    """Configuration for the step state recorder term."""
-
-    class_type: type[RecorderTerm] = PostStepStatesRecorder
-
-
-@configclass
-class PreStepActionsRecorderCfg(RecorderTermCfg):
-    """Configuration for the step action recorder term."""
-
-    class_type: type[RecorderTerm] = PreStepActionsRecorder
-
-
-@configclass
-class PreStepFlatPolicyObservationsRecorderCfg(RecorderTermCfg):
-    """Configuration for the step policy observation recorder term."""
-
-    class_type: type[RecorderTerm] = PreStepFlatPolicyObservationsRecorder
-
-
-@configclass
-class PostStepProcessedActionsRecorderCfg(RecorderTermCfg):
-    """Configuration for the post step processed actions recorder term."""
-
-    class_type: type[RecorderTerm] = PostStepProcessedActionsRecorder
-
-
-##
-# Recorder manager configurations.
-##
-
-
-@configclass
-class ActionStateRecorderManagerCfg(RecorderManagerBaseCfg):
-    """Recorder configurations for recording actions and states."""
-
-    record_post_step_states = PostStepStatesRecorderCfg()
-    record_pre_step_actions = PreStepActionsRecorderCfg()
-    record_pre_step_flat_policy_observations = (
-        PreStepFlatPolicyObservationsRecorderCfg()
-    )
-    record_post_step_processed_actions = PostStepProcessedActionsRecorderCfg()
-    dataset_export_dir_path: str = "datasets"
-    dataset_filename: str = (
-        f"isaac_spot_dataset_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
-    )
-    export_in_close = True
 
 
 @configclass

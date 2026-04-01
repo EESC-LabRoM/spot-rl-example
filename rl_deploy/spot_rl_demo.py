@@ -17,7 +17,7 @@ from rl_deploy.spot.spot import Spot
 from rl_deploy.utils.event_divider import EventDivider
 from rl_deploy.utils.hdf5_logger import HDF5Logger
 
-
+from datetime import datetime
 def main():
     """Command line interface. change that is ok"""
     parser = argparse.ArgumentParser()
@@ -32,7 +32,7 @@ def main():
     parser.add_argument(
         "--hdf5_log",
         type=str,
-        default="spot_isaac_real.hdf5",
+        default=f"spot_isaac_real_{datetime.now().strftime('%Y%m%d_%H%M%S')}.hdf5",
         help="Path to save HDF5 log of observations.",
     )
     options = parser.parse_args()
@@ -58,10 +58,13 @@ def main():
     if options.mock:
         spot = MockSpot()
     else:
+        print("Connecting Spot")
         spot = Spot(options)
+        print("OK")
 
     with spot.lease_keep_alive():
         try:
+            print("Powering on and standing")
             spot.power_on()
             spot.stand(0.0)
             print("start state stream")

@@ -5,10 +5,6 @@ from operator import sub
 from bosdyn.api import robot_state_pb2
 from spatialmath import UnitQuaternion
 
-from rl_deploy.orbit.orbit_configuration import OrbitConfig
-from rl_deploy.orbit.orbit_constants import ORDERED_JOINT_NAMES_ISAAC
-from rl_deploy.spot.constants import ORDERED_JOINT_NAMES_SPOT
-from rl_deploy.utils.dict_tools import dict_to_list, find_ordering, reorder
 
 
 def get_base_linear_velocity(state: robot_state_pb2.RobotStateStreamResponse):
@@ -98,9 +94,10 @@ def get_joint_positions(
     state -- proto msg from spot containing data on the robots state
     config -- dataclass with values loaded from orbits training data
     """
-    spot_to_orbit = find_ordering(ORDERED_JOINT_NAMES_SPOT, ORDERED_JOINT_NAMES_ISAAC)
-    pos = reorder(state.joint_states.position, spot_to_orbit)
-    pos = list(map(sub, pos, default_joints))
+    # I trained with the correct order
+    # spot_to_orbit = find_ordering(ORDERED_JOINT_NAMES_SPOT, ORDERED_JOINT_NAMES_ISAAC)
+    # pos = reorder(state.joint_states.position, spot_to_orbit)
+    pos = list(map(sub, state.joint_states.position, default_joints))
     return pos
 
 
@@ -111,9 +108,10 @@ def get_joint_velocity(state: robot_state_pb2.RobotStateStreamResponse):
     arguments
     state -- proto msg from spot containing data on the robots state
     """
-    spot_to_orbit = find_ordering(ORDERED_JOINT_NAMES_SPOT, ORDERED_JOINT_NAMES_ISAAC)
-    vel = reorder(state.joint_states.velocity, spot_to_orbit)
-    return vel
+    # I trained with the correct order
+    # spot_to_orbit = find_ordering(ORDERED_JOINT_NAMES_SPOT, ORDERED_JOINT_NAMES_ISAAC)
+    # vel = reorder(state.joint_states.velocity, spot_to_orbit)
+    return state.joint_states.velocity
 
 def generate_joint_commands(state: robot_state_pb2.RobotStateStreamResponse):
     """
@@ -131,11 +129,27 @@ def generate_joint_commands(state: robot_state_pb2.RobotStateStreamResponse):
 
     Right now it is hardcoded for the fixed arm position with no torso inclination
     """ 
-    return [ 0.0000, -3.1415,  3.1415,  1.5655,  0.0000, 0.0000,  0.0000,  0.0000,
+    return [ 0.0000, -3.1415,  3.1415,  1.5655,  0.0000,  0.0000,  0.0000,  0.0000,
          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000]
 
-    
+def get_join_load(state: robot_state_pb2.RobotStateStreamResponse):
+    """get joint load from spots state update a reformat for orbit by
+    reordering to match orbits expectation
+
+    arguments
+    state -- proto msg from spot containing data on the robots state
+    """
+    # I trained with the correct order
+    #spot_to_orbit = find_ordering(ORDERED_JOINT_NAMES_SPOT, ORDERED_JOINT_NAMES_ISAAC)
+    #load = reorder(state.joint_states.load, spot_to_orbit)
+    return state.joint_states.load
+
+
+def get_response_timestamp(state: robot_state_pb2.RobotStateStreamResponse):
+    """get timestamp from spots state update"""
+    return state.header.response_timestamp
+
 # Not working
 # def get_joint_acceleration(state: robot_state_pb2.RobotStateStreamResponse):
 #     """get joint acceleration from spots state update a reformat for orbit by
@@ -149,21 +163,6 @@ def generate_joint_commands(state: robot_state_pb2.RobotStateStreamResponse):
 #     return acc
 
 
-def get_join_load(state: robot_state_pb2.RobotStateStreamResponse):
-    """get joint load from spots state update a reformat for orbit by
-    reordering to match orbits expectation
-
-    arguments
-    state -- proto msg from spot containing data on the robots state
-    """
-    spot_to_orbit = find_ordering(ORDERED_JOINT_NAMES_SPOT, ORDERED_JOINT_NAMES_ISAAC)
-    load = reorder(state.joint_states.load, spot_to_orbit)
-    return load
-
-
-def get_response_timestamp(state: robot_state_pb2.RobotStateStreamResponse):
-    """get timestamp from spots state update"""
-    return state.header.response_timestamp
 
 
 # Not working

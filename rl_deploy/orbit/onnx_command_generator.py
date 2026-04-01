@@ -26,6 +26,7 @@ from rl_deploy.spot.constants import (
     JOINT_LIMITS,
     JOINT_SOFT_LIMITS,
     ORDERED_JOINT_NAMES_SPOT,
+    ORDERED_JOINT_NAMES_SPOT_BASE
 )
 from rl_deploy.utils.dict_tools import dict_to_list, find_ordering, reorder
 from rl_deploy.utils.hdf5_logger import HDF5Logger
@@ -37,7 +38,7 @@ class OnnxControllerContext:
 
     event = Event()
     latest_state = None
-    velocity_cmd = [0, 0, 0]
+    velocity_cmd = [0.0, 0.0, 0.0]
     count = 0
 
     def __post_init__(self):
@@ -77,6 +78,22 @@ def print_observations(observations: List[float]):
     print("last_action", observations[36:48])
 
 
+JOINTS_ORDER_RELIC = [
+    "fl_hx",
+    "fr_hx",
+    "hl_hx",
+    "hr_hx",
+    "fl_hy",
+    "fr_hy",
+    "hl_hy",
+    "hr_hy",
+    "fl_kn",
+    "fr_kn",
+    "hl_kn",
+    "hr_kn",
+]
+
+
 class OnnxCommandGenerator:
     """class to be used as generator for spots command stream that executes
     an onnx model and converts the output to a spot command"""
@@ -85,9 +102,9 @@ class OnnxCommandGenerator:
         self,
         context: OnnxControllerContext,
         config: OrbitConfig,
-        policy_file_name: os.PathLike,
+        policy_file_name: os.PathLike | str,
         verbose: bool,
-        logger: HDF5Logger = None,
+        logger: HDF5Logger | None = None,
         mock: bool = False,
     ):
         self._context = context
@@ -102,18 +119,19 @@ class OnnxCommandGenerator:
         self.verbose = verbose
 
         self.joints_offsets_ordered_base = dict_to_list(
-            self._config.default_joints, ['fl_hx', 'fr_hx', 'hl_hx', 'hr_hx', 'fl_hy', 'fr_hy', 'hl_hy', 'hr_hy', 'fl_kn', 'fr_kn', 'hl_kn', 'hr_kn']#ORDERED_JOINT_NAMES_BASE_ISAAC
+            self._config.default_joints, ORDERED_JOINT_NAMES_SPOT_BASE
         )
-        self.joints_offsets_ordered = dict_to_list(
-            self._config.default_joints, ORDERED_JOINT_NAMES_ISAAC
+        self.joints_offsets_ordered_spot = dict_to_list(
+            self._config.default_joints, ORDERED_JOINT_NAMES_SPOT
         )
-        self.arm_offsets_ordered = dict_to_list(
-            self._config.default_joints, ORDERED_JOINT_NAMES_ARM_ISAAC
-        )
+
+        self.arm_offsets_ordered = [0.0, -3.1415, 3.1415, 1.5655, 0.00, 0.0, 0.0]
+        # dict_to_list(
+        #     [0.0, -3.1415, 3.1415, 1.5655, 0.00, 0.0, 0.0], ORDERED_JOINT_NAMES_ARM_ISAAC
+        # )
 
         self._triggered_safety = False
         self._safety_pos = None
-
 
         self._safe_limits = self._generate_safe_limits()
 
@@ -255,7 +273,9 @@ class OnnxCommandGenerator:
                 raw_base_linear_velocity=ob.get_base_linear_velocity(raw_state),
                 raw_base_angular_velocity=ob.get_base_angular_velocity(raw_state),
                 raw_projected_gravity=ob.get_projected_gravity(raw_state),
-                raw_joint_positions=ob.get_joint_positions(raw_state, self.joints_offsets_ordered),
+                raw_joint_positions=ob.get_joint_positions(
+                    raw_state, self.joints_offsets_ordered_spot
+                ),
                 raw_joint_velocities=ob.get_joint_velocity(raw_state),
                 raw_joint_loads=ob.get_join_load(raw_state),
                 response_timestamp=ob.get_response_timestamp(raw_state),
@@ -316,26 +336,26 @@ class OnnxCommandGenerator:
         # TODO: test with rampup scaling commands
         scaled_output = list(map(mul, [self._config.action_scale] * 12, output))
 
-        # set joint offsets for base
-        shifted_output_base = list(map(add, scaled_output, self.joints_offsets_ordered_base))
-        shifted_output = shifted_output_base + self.arm_offsets_ordered
-
         # reorder for spot
         isaac_to_spot = find_ordering(
-            ['fl_hx', 'fr_hx', 'hl_hx', 'hr_hx', 'fl_hy', 'fr_hy', 'hl_hy', 'hr_hy', 'fl_kn', 'fr_kn', 'hl_kn', 'hr_kn', "arm_sh0",
-    "arm_sh1",
-    "arm_el0",
-    "arm_el1",
-    "arm_wr0",
-    "arm_wr1",
-    "arm_f1x",], ORDERED_JOINT_NAMES_SPOT
+            JOINTS_ORDER_RELIC,
+            ORDERED_JOINT_NAMES_SPOT_BASE,
         )
-        reordered_output = reorder(shifted_output, isaac_to_spot)
+        reordered_output = reorder(scaled_output, isaac_to_spot)
 
-        return reordered_output
+        # set joint offsets for base
+        shifted_output_base = list(
+            map(add, reordered_output, self.joints_offsets_ordered_base)
+        )
+        shifted_output = shifted_output_base + self.arm_offsets_ordered
+
+        return shifted_output
 
     def collect_inputs(
-        self, state: JointControlStreamRequest, config: OrbitConfig
+        self,
+        state: JointControlStreamRequest,
+        config: OrbitConfig,
+        joint_commands: List[float] | None = None,
     ) -> dict:
         """extract observation data from spots current state and format for onnx
 
@@ -353,8 +373,13 @@ class OnnxCommandGenerator:
             "base_angular_velocity": ob.get_base_angular_velocity(state),
             "projected_gravity": ob.get_projected_gravity(state),
             "velocity_cmd": self._context.velocity_cmd,
-            "joint_commands": ob.generate_joint_commands(state),
-            "joint_positions": ob.get_joint_positions(state, self.joints_offsets_ordered),
+            "joint_commands": joint_commands
+            if joint_commands is not None
+            else ob.generate_joint_commands(state),
+            # TODO
+            "joint_positions": ob.get_joint_positions(
+                state, self.joints_offsets_ordered_spot
+            ),
             "joint_velocities": ob.get_joint_velocity(state),
             "last_action": self._last_action,
         }

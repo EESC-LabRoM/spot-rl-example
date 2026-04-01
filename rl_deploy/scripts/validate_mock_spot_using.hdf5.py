@@ -1,0 +1,133 @@
+import h5py
+from matplotlib.style import context
+import numpy as np
+from rl_deploy.isaaclab_spot.isaac_spot import IsaacMockSpot
+from rl_deploy.orbit import orbit_configuration
+from rl_deploy.orbit.onnx_command_generator import JOINTS_ORDER_RELIC, OnnxCommandGenerator, OnnxControllerContext, StateHandler
+from rl_deploy.spot.constants import ORDERED_JOINT_NAMES_SPOT_BASE
+from rl_deploy.utils.dict_tools import find_ordering, reorder
+import torch
+
+
+class PipelineValidator:
+    def __init__(self, hdf5_path: str):
+        self.hdf5_path = hdf5_path
+        
+        # 1. Setup Config
+        export_model_dir = "rl_deploy/configs"
+        env_config = orbit_configuration.detect_config_file(export_model_dir)
+        policy_file = orbit_configuration.detect_policy_file(export_model_dir)
+        
+        assert env_config is not None, f"No environment config file found in {export_model_dir}"
+        assert policy_file is not None, f"No policy ONNX file found in {export_model_dir}"
+
+        config = orbit_configuration.load_configuration(env_config)
+    
+        # 2. Setup Context and Generator
+
+        self.context =  OnnxControllerContext()
+        self.context.velocity_cmd = [0.0, 0.0, 0.0]  # Default, will update per step
+        state_handler = StateHandler(self.context)
+        
+        self.generator = OnnxCommandGenerator(
+                self.context, config, policy_file,
+                verbose=False,
+                mock=False
+            )
+            
+        self.mock_spot = IsaacMockSpot()
+        self.latest_msg = None
+        self.mock_spot.start_state_stream(state_handler)
+
+    def validate(self):
+        with h5py.File(self.hdf5_path, "r") as file:
+            f= file["data/demo_0"]
+            num_steps = f["obs/spot/sim_time"].shape[0]
+            print(f"Validating {num_steps} steps from {self.hdf5_path}...")
+            
+            for i in range(num_steps):
+                # -------------------------------------------------------------
+                # 1. Reconstruct IsaacLab State Dictionary (Simulated SpotObs)
+                # -------------------------------------------------------------
+                state_dict = {
+                    "joint_pos": torch.tensor(f["obs/spot/joint_pos"][i]).unsqueeze(0),
+                    "joint_vel": torch.tensor(f["obs/spot/joint_vel"][i]).unsqueeze(0),
+                    "root_lin_vel_w": torch.tensor(f["obs/spot/root_lin_vel_w"][i]).unsqueeze(0),
+                    "root_ang_vel_w": torch.tensor(f["obs/spot/root_ang_vel_w"][i]).unsqueeze(0),
+                    "root_quat_w": torch.tensor(f["obs/spot/root_quat_w"][i]).unsqueeze(0),
+                    "joint_effort": torch.tensor(f["obs/spot/joint_effort"][i]).unsqueeze(0),
+                    "sim_time": torch.tensor(f["obs/spot/sim_time"][i]).unsqueeze(0),
+                }
+
+                action_dict = {
+                    "actions": torch.tensor(f["actions/leg_processed_actions"][i]).unsqueeze(0),
+                }
+                # -------------------------------------------------------------
+                # 2. Extract Ground Truth Policy Observations (Isaac PolicyCfg)
+                # -------------------------------------------------------------
+                # Assuming the recorder saved the flat policy buffer in 'obs'
+                # If your recorder saves a dictionary of groups, adjust to f["obs/policy"][i]
+                isaac_obs = f["obs/policy"][i] 
+                
+                # Slice the flat Isaac observation array based on PolicyCfg
+                # Update these indices if your sizes differ (e.g., N_DOF)
+                isaac_base_lin_vel = isaac_obs[0:3]
+                isaac_base_ang_vel = isaac_obs[3:6]
+                isaac_projected_gravity = isaac_obs[6:9]
+                isaac_velocity_cmd = isaac_obs[9:12]
+                isaac_commands = isaac_obs[12:34] # length 22
+                isaac_joint_pos = isaac_obs[34:53] # length 19
+                isaac_joint_vel = isaac_obs[53:72] # length 19
+                isaac_last_action = isaac_obs[72:84] # length 12
+                
+                # Update context with the actual velocity command & last action from this step
+                self.context.velocity_cmd = isaac_velocity_cmd.tolist()
+                self.generator._last_action = isaac_last_action.tolist()
+
+                # -------------------------------------------------------------
+                # 3. Run Pipeline (IsaacMockSpot -> OnnxCommandGenerator)
+                # -------------------------------------------------------------
+                self.mock_spot.set_state(state_dict)
+                
+                # Collect inputs using your deployed logic
+                pipeline_inputs = self.generator.collect_inputs(self.context.latest_state, self.generator._config, joint_commands=[i for i in isaac_commands] )
+
+                # -------------------------------------------------------------
+                # 4. Compare Pipeline Output vs IsaacLab Ground Truth
+                # -------------------------------------------------------------
+                self._compare_vectors("Base Linear Velocity", isaac_base_lin_vel, pipeline_inputs["base_linear_velocity"], step=i)
+                self._compare_vectors("Base Angular Velocity", isaac_base_ang_vel, pipeline_inputs["base_angular_velocity"], step=i)
+                self._compare_vectors("Projected Gravity", isaac_projected_gravity, pipeline_inputs["projected_gravity"], step=i)
+                self._compare_vectors("Joint Positions", isaac_joint_pos, pipeline_inputs["joint_positions"], step=i)
+                self._compare_vectors("Joint Velocities", isaac_joint_vel, pipeline_inputs["joint_velocities"], step=i)
+                self._compare_vectors("Joint Commands", isaac_commands, pipeline_inputs["joint_commands"], step=i)
+                
+                # -------------------------------------------------------------
+                # 5. Compare Pipeline Action vs IsaacLab Ground Truth
+                # -------------------------------------------------------------
+                pipeline_action = self.generator()
+                spot_to_isaac = find_ordering(
+                           ORDERED_JOINT_NAMES_SPOT_BASE,
+                            JOINTS_ORDER_RELIC,
+                    )
+
+                self._compare_vectors("Actions", action_dict["actions"][0], reorder(pipeline_action.joint_command.position[:12], spot_to_isaac),step=i, tolerance = 1e-2)
+                                      
+            print("Validation complete! All tested steps match.")
+
+    def _compare_vectors(self, name: str, expected: np.ndarray, actual: list, step: int, tolerance: float = 1e-4):
+        actual_np = np.array(actual)
+        expected_np = np.array(expected)
+        
+        diff = np.max(np.abs(expected_np - actual_np))
+        if diff > tolerance:
+            print(f"--- MISMATCH AT STEP {step} IN {name} ---")
+            print(f"Max Diff: {diff}")
+            print(f"Expected (IsaacLab) : {expected_np}")
+            print(f"Actual   (Pipeline) : {actual_np}")
+            raise AssertionError(f"Pipeline output for {name} diverged from IsaacLab ground truth.")
+
+if __name__ == "__main__":
+    # Replace with your actual HDF5 dataset filename
+    validator = PipelineValidator("datasets/isaac_spot_dataset_2026-03-30_19-10-13.hdf5")
+    validator.validate()
