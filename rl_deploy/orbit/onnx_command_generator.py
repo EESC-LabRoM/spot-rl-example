@@ -26,10 +26,12 @@ from rl_deploy.spot.constants import (
     JOINT_LIMITS,
     JOINT_SOFT_LIMITS,
     ORDERED_JOINT_NAMES_SPOT,
-    ORDERED_JOINT_NAMES_SPOT_BASE
+    ORDERED_JOINT_NAMES_SPOT_BASE,
 )
 from rl_deploy.utils.dict_tools import dict_to_list, find_ordering, reorder
 from rl_deploy.utils.hdf5_logger import HDF5Logger
+import onnx
+from onnx import numpy_helper
 
 
 @dataclass
@@ -75,7 +77,7 @@ def print_observations(observations: List[float]):
     print("projected_gravity:", observations[6:9])
     print("joint_positions", observations[12:24])
     print("joint_velocity", observations[24:36])
-    print("last_action", observations[36:48])
+    print("last_actions", observations[36:48])
 
 
 JOINTS_ORDER_RELIC = [
@@ -92,6 +94,29 @@ JOINTS_ORDER_RELIC = [
     "hl_kn",
     "hr_kn",
 ]
+
+
+def extract_shift_from_onnx(onnx_file_path):
+    # 1. Load the ONNX model graph
+    print(f"Loading {onnx_file_path}...")
+    model = onnx.load(onnx_file_path)
+
+    # 2. Iterate through the graph's initializers (weights, biases, buffers)
+    for init in model.graph.initializer:
+        # PyTorch usually names the buffer exactly "shift" or something similar like "model.shift"
+        if "shift" in init.name.lower():
+            # 3. Convert the ONNX tensor to a standard Numpy array
+            shift_array = numpy_helper.to_array(init)
+
+            print(f"\n[SUCCESS] Found buffer named: '{init.name}'")
+            print(f"Shape: {shift_array.shape}")
+            print(f"Values:\n{shift_array}")
+
+            # Return just the 12 leg joints, or the whole thing
+            return shift_array
+
+    print("\n[FAILED] Could not find any initializer containing the name 'shift'.")
+    return None
 
 
 class OnnxCommandGenerator:
@@ -112,20 +137,17 @@ class OnnxCommandGenerator:
         self.logger = logger
         self.mock = mock
         self._inference_session = ort.InferenceSession(policy_file_name)
-        self._last_action = [0] * 12
+        self._last_action = extract_shift_from_onnx(policy_file_name)[:12]
         self._count = 1
         self._init_pos = None
         self._init_load = None
         self.verbose = verbose
 
-        self.joints_offsets_ordered_base = dict_to_list(
-            self._config.default_joints, ORDERED_JOINT_NAMES_SPOT_BASE
-        )
         self.joints_offsets_ordered_spot = dict_to_list(
             self._config.default_joints, ORDERED_JOINT_NAMES_SPOT
         )
 
-        self.arm_offsets_ordered = [0.0, -3.1415, 3.1415, 1.5655, 0.00, 0.0, 0.0]
+        self.arm_offsets_ordered = [0.0, -3.1415, 3.1415, 1.5655, 0.00, -1.5655, 0.0]
         # dict_to_list(
         #     [0.0, -3.1415, 3.1415, 1.5655, 0.00, 0.0, 0.0], ORDERED_JOINT_NAMES_ARM_ISAAC
         # )
@@ -209,20 +231,6 @@ class OnnxCommandGenerator:
         # extract observation data from latest spot state data
         inputs_dict = self.collect_inputs(self._context.latest_state, self._config)
 
-        # Flatten for the onnx model
-        input_list = []
-        for key in [
-            "base_linear_velocity",
-            "base_angular_velocity",
-            "projected_gravity",
-            "velocity_cmd",
-            "joint_commands",
-            "joint_positions",
-            "joint_velocities",
-            "last_action",
-        ]:
-            input_list += inputs_dict[key]
-
         current_positions_map = dict(
             zip(
                 ORDERED_JOINT_NAMES_SPOT,
@@ -249,15 +257,17 @@ class OnnxCommandGenerator:
             t_onx_start = t_onx_end = time.perf_counter()
         else:
             t_onx_start = time.perf_counter()
-            output = self._compute_action(input_list)
+            output = self._compute_action(inputs_dict)
             t_onx_end = time.perf_counter()
 
         t_post_start = time.perf_counter()
-        action = self._post_process_action_to_spot(output)
+        action = output
+        print("Inputs: ", inputs_dict)
+        print("Action: ", action)
         t_post_end = time.perf_counter()
 
         # generate proto message from target joint positions
-        proto = self.create_proto(action)
+        proto = self.create_proto(action + self.arm_offsets_ordered)
 
         if self.logger is not None:
             dt_onnx = t_onx_end - t_onx_start
@@ -284,10 +294,10 @@ class OnnxCommandGenerator:
                 preprocessed_base_linear_velocity=inputs_dict["base_linear_velocity"],
                 preprocessed_base_angular_velocity=inputs_dict["base_angular_velocity"],
                 preprocessed_projected_gravity=inputs_dict["projected_gravity"],
-                preprocessed_velocity_cmd=inputs_dict["velocity_cmd"],
+                preprocessed_velocity_cmd=inputs_dict["velocity_commands"],
                 preprocessed_joint_positions=inputs_dict["joint_positions"],
                 preprocessed_joint_velocities=inputs_dict["joint_velocities"],
-                preprocessed_last_action=inputs_dict["last_action"],
+                preprocessed_last_action=inputs_dict["last_actions"],
                 commanded_action=action,
                 dt_divider_wait=dt_divider_wait,
                 dt_divider_to_onnx=dt_divider_to_onnx,
@@ -325,31 +335,12 @@ class OnnxCommandGenerator:
                 return True
         return False
 
-    def _compute_action(self, input_list: List[float]):
+    def _compute_action(self, input_dict: dict[str, float]):
         # execute model from onnx file
-        input = [np.array(input_list).astype("float32")]
-        output = self._inference_session.run(None, {"obs": input})[0].tolist()[0]
+        output = self._inference_session.run(None, input_dict)[0].tolist()[
+            0
+        ]  # add arm offsets
         return output
-
-    def _post_process_action_to_spot(self, output: List[float]):
-        # post process model output apply action scaling and return to spots
-        # TODO: test with rampup scaling commands
-        scaled_output = list(map(mul, [self._config.action_scale] * 12, output))
-
-        # reorder for spot
-        isaac_to_spot = find_ordering(
-            JOINTS_ORDER_RELIC,
-            ORDERED_JOINT_NAMES_SPOT_BASE,
-        )
-        reordered_output = reorder(scaled_output, isaac_to_spot)
-
-        # set joint offsets for base
-        shifted_output_base = list(
-            map(add, reordered_output, self.joints_offsets_ordered_base)
-        )
-        shifted_output = shifted_output_base + self.arm_offsets_ordered
-
-        return shifted_output
 
     def collect_inputs(
         self,
@@ -369,19 +360,32 @@ class OnnxCommandGenerator:
             print("[INFO] cmd", self._context.velocity_cmd)
 
         return {
-            "base_linear_velocity": ob.get_base_linear_velocity(state),
-            "base_angular_velocity": ob.get_base_angular_velocity(state),
-            "projected_gravity": ob.get_projected_gravity(state),
-            "velocity_cmd": self._context.velocity_cmd,
-            "joint_commands": joint_commands
-            if joint_commands is not None
-            else ob.generate_joint_commands(state),
-            # TODO
-            "joint_positions": ob.get_joint_positions(
-                state, self.joints_offsets_ordered_spot
-            ),
-            "joint_velocities": ob.get_joint_velocity(state),
-            "last_action": self._last_action,
+            "base_linear_velocity": ob.get_base_linear_velocity(state)
+            .astype(np.float32)
+            .reshape(1, 3),
+            "base_angular_velocity": ob.get_base_angular_velocity(state)
+            .astype(np.float32)
+            .reshape(1, 3),
+            "projected_gravity": ob.get_projected_gravity(state)
+            .astype(np.float32)
+            .reshape(1, 3),
+            "velocity_commands": np.array(self._context.velocity_cmd)
+            .astype(np.float32)
+            .reshape(1, 3),
+            # "joint_commands": joint_commands
+            # if joint_commands is not None
+            # else ob.generate_joint_commands(state),
+            # # TODO
+            "joint_positions": np.array(state.joint_states.position)
+            .astype(np.float32)
+            .reshape(1, -1),
+            "joint_velocities": np.array(state.joint_states.velocity)
+            .astype(np.float32)
+            .reshape(1, -1),
+            "last_actions": np.array(self._last_action)
+            .astype(np.float32)
+            .reshape(1, -1)
+            * 0.2,
         }
 
     def create_proto(self, pos_command: List[float]):

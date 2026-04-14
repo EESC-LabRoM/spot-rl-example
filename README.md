@@ -1,30 +1,11 @@
 ## Docker
 ```bash
 docker compose -f docker/docker-compose.yaml up -d
+docker exec -it docker-isaaclab-1 bash
 ```
 # Spot-RL
 Code & Dockerfile for Spot Reinforcement Learning demo
 
-# Import our image from .tar
-```bash
-docker load -i spot-rl-demo-<arch>.tar
-docker tag spot-rl-demo:<arch> spot-rl-demo:latest
-```
-
-# Default Model 15k Steps
-```bash
-docker run --privileged --rm -it -v /dev/input:/dev/input spot-rl-demo:latest <ip of robot api> /spot-rl/external/models/
-````
-
-# Bring your own model (don't forget to set the IP)
-```bash
-docker run --privileged --rm -it -v /dev/input:/dev/input -v /path/to/folder/with/onz:/models spot-rl-demo:latest 192.168.x.y /models
-```
-
-# Example with local directory ./Model_Under_Test (don't forget to set the IP)
-```bash
-docker run --privileged --rm -it -v /dev/input:/dev/input -v ./Model_Under_Test/:/mut spot-rl-demo:latest 192.168.x.y /mut
-```
 
 # Installing without docker from locally cloned repo
 ```bash
@@ -44,6 +25,8 @@ pip3 install onnxruntime
 
 # Example of mocked
 ```bash
+export BOSDYN_CLIENT_USERNAME=admin
+export BOSDYN_CLIENT_PASSWORD=spotadmin2017
 uv run rl_deploy/spot_rl_demo.py  10.0.0.3 --mock
 uv run rl_deploy/spot_rl_isaac.py
 ```

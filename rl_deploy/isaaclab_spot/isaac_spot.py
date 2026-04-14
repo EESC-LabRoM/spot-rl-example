@@ -44,7 +44,9 @@ class IsaacMockSpot:
         sim_time = state["sim_time"].cpu().tolist()[0]
 
         self._state_msg = RobotStateStreamResponse()
-        sim_time_dt = datetime.datetime(2024, 1, 1) + datetime.timedelta(seconds=sim_time[0])
+        sim_time_dt = datetime.datetime(2024, 1, 1) + datetime.timedelta(
+            seconds=sim_time[0]
+        )
         self._state_msg.header.response_timestamp.FromDatetime(sim_time_dt)
         self._state_msg.kinematic_state.odom_tform_body.rotation.w = root_quat_w[0]
         self._state_msg.kinematic_state.odom_tform_body.rotation.x = root_quat_w[1]
@@ -87,12 +89,7 @@ class IsaacMockSpot:
 
     def command_update(self):
         positions = self._command_generator().joint_command.position
-
-        spot_to_isaac = find_ordering(
-            ORDERED_JOINT_NAMES_SPOT, ORDERED_JOINT_NAMES_ISAAC
-        )
-        reordered_output = reorder(positions, spot_to_isaac)
-        return torch.tensor(reordered_output).unsqueeze(0)
+        return torch.tensor(positions).unsqueeze(0)
 
     def power_on(self):
         pass

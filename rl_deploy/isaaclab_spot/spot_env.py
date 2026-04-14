@@ -30,7 +30,7 @@ from datetime import datetime
 from rl_deploy.spot.constants import (
     ORDERED_JOINT_NAMES_SPOT_ARM,
     ORDERED_JOINT_NAMES_SPOT_BASE,
-    ORDERED_JOINT_NAMES_SPOT
+    ORDERED_JOINT_NAMES_SPOT,
 )
 from rl_deploy.isaaclab_spot.isaac_model import (
     ARM_ARMATURE,
@@ -218,25 +218,24 @@ class SpotObservationsCfg:
     @configclass
     class SpotObs(ObsGroup):
         """Observations for spot group."""
-        
-        sim_time = ObsTerm(func=time_)
 
+        sim_time = ObsTerm(func=time_)
 
         root_lin_vel_w = ObsTerm(
             func=mdp.root_lin_vel_w,
             params={"asset_cfg": SceneEntityCfg("robot")},
         )
-        
+
         root_ang_vel_w = ObsTerm(
             func=mdp.root_ang_vel_w,
             params={"asset_cfg": SceneEntityCfg("robot")},
         )
-        
+
         root_quat_w = ObsTerm(
             func=mdp.root_quat_w,
             params={"asset_cfg": SceneEntityCfg("robot")},
         )
-        
+
         joint_pos = ObsTerm(
             func=mdp.joint_pos,
             params={
@@ -268,6 +267,7 @@ class SpotObservationsCfg:
                 )
             },
         )
+
         def __post_init__(self):
             self.enable_corruption = False
             self.concatenate_terms = False
@@ -415,7 +415,7 @@ class PreStepFlatPolicyObservationsRecorder(RecorderTerm):
     """Recorder term that records the policy group observations in each step."""
 
     def record_pre_step(self):
-        return "obs", self._env.obs_buf["spot"]  | self._env.obs_buf["debug"]
+        return "obs", self._env.obs_buf["spot"] | self._env.obs_buf["debug"]
 
 
 class PostStepProcessedActionsRecorder(RecorderTerm):

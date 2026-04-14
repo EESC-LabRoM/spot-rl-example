@@ -5,6 +5,7 @@
 from collections.abc import Sequence
 
 import torch
+
 # IsaacLab/source/isaaclab/isaaclab/actuators/actuator_pd_cfg.py
 from isaaclab.actuators.actuator_cfg import RemotizedPDActuatorCfg
 from isaaclab.actuators.actuator_pd import RemotizedPDActuator
@@ -81,6 +82,65 @@ class SpotKneeActuator(RemotizedPDActuator):
             device=device,
         )
 
+    def compute_pd_ideal(
+        self,
+        control_action: ArticulationActions,
+        joint_pos: torch.Tensor,
+        joint_vel: torch.Tensor,
+    ) -> ArticulationActions:
+        # compute errors
+        error_pos = control_action.joint_positions - joint_pos
+        error_vel = control_action.joint_velocities - joint_vel
+        # calculate the desired joint torques
+        self.computed_effort = (
+            self.stiffness * error_pos
+            + self.damping * error_vel
+            + control_action.joint_efforts
+        )
+        # clip the torques based on the motor limits
+        self.applied_effort = self._clip_effort(self.computed_effort)
+        # set the computed actions back into the control action
+        control_action.joint_efforts = self.applied_effort
+        control_action.joint_positions = None
+        control_action.joint_velocities = None
+        return control_action
+
+    def compute_delayed(
+        self,
+        control_action: ArticulationActions,
+        joint_pos: torch.Tensor,
+        joint_vel: torch.Tensor,
+    ) -> ArticulationActions:
+        # apply delay based on the delay the model for all the setpoints
+        control_action.joint_positions = self.positions_delay_buffer.compute(
+            control_action.joint_positions
+        )
+        control_action.joint_velocities = self.velocities_delay_buffer.compute(
+            control_action.joint_velocities
+        )
+        control_action.joint_efforts = self.efforts_delay_buffer.compute(
+            control_action.joint_efforts
+        )
+        # compte actuator model
+        return self.compute_pd_ideal(control_action, joint_pos, joint_vel)
+
+    def compute_remotized_pd(
+        self,
+        control_action: ArticulationActions,
+        joint_pos: torch.Tensor,
+        joint_vel: torch.Tensor,
+    ) -> ArticulationActions:
+        # call the base method
+        control_action = self.compute_delayed(control_action, joint_pos, joint_vel)
+        # compute the absolute torque limits for the current joint positions
+        abs_torque_limits = self._torque_limit.compute(joint_pos)
+        # apply the limits
+        control_action.joint_efforts = torch.clamp(
+            control_action.joint_efforts, min=-abs_torque_limits, max=abs_torque_limits
+        )
+        self.applied_effort = control_action.joint_efforts
+        return control_action
+
     def compute(
         self,
         control_action: ArticulationActions,
@@ -88,7 +148,7 @@ class SpotKneeActuator(RemotizedPDActuator):
         joint_vel: torch.Tensor,
     ) -> ArticulationActions:
         """Compute the control action for the Spot robot with positional torque speed limits."""
-        control_action = super().compute(control_action, joint_pos, joint_vel)
+        control_action = self.compute_remotized_pd(control_action, joint_pos, joint_vel)
 
         # compute torque-speed limits
         if self._enable_torque_speed_limit:

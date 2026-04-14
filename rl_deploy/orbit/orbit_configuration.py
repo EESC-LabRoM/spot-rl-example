@@ -15,7 +15,8 @@ from rl_deploy.spot.constants import DEFAULT_K_Q_P, DEFAULT_K_QD_P, DOF
 
 
 class Ref(yaml.YAMLObject):
-    yaml_tag = 'tag:yaml.org,2002:python/tuple'
+    yaml_tag = "tag:yaml.org,2002:python/tuple"
+
     def __init__(self, val):
         self.val = val
 
@@ -23,8 +24,9 @@ class Ref(yaml.YAMLObject):
     def from_yaml(cls, loader, node):
         return tuple(node.value)
 
+
 class Slices(yaml.YAMLObject):
-    yaml_tag = 'python/object/apply:builtins.slice'
+    yaml_tag = "python/object/apply:builtins.slice"
 
     @classmethod
     def from_yaml(cls, loader, node):
@@ -36,8 +38,12 @@ class Slices(yaml.YAMLObject):
         elif len(values) == 3:
             return slice(values[0].value, values[1].value, values[2].value)
 
-yaml.SafeLoader.add_constructor('tag:yaml.org,2002:python/tuple', Ref.from_yaml)
-yaml.SafeLoader.add_constructor('tag:yaml.org,2002:python/object/apply:builtins.slice', Slices.from_yaml)
+
+yaml.SafeLoader.add_constructor("tag:yaml.org,2002:python/tuple", Ref.from_yaml)
+yaml.SafeLoader.add_constructor(
+    "tag:yaml.org,2002:python/object/apply:builtins.slice", Slices.from_yaml
+)
+
 
 @dataclass
 class OrbitConfig:
@@ -73,7 +79,7 @@ def detect_config_file(directory: os.PathLike | str) -> dict | None:
     return None
 
 
-def detect_policy_file(directory: os.PathLike | str) -> str| None:
+def detect_policy_file(directory: os.PathLike | str) -> str | None:
     """find onnx file in policy directory
 
     arguments
@@ -121,8 +127,10 @@ def load_configuration(env_config: dict) -> OrbitConfig:
     for joint_name in ORDERED_JOINT_NAMES_ARM_ISAAC:
         joint_kp[joint_name] = DEFAULT_K_Q_P[DOF[joint_name.upper()]]
         joint_kd[joint_name] = DEFAULT_K_QD_P[DOF[joint_name.upper()]]
-        print(f"Setting {joint_name} kp to {joint_kp[joint_name]} and kd to {joint_kd[joint_name]}")    
-    
+        print(
+            f"Setting {joint_name} kp to {joint_kp[joint_name]} and kd to {joint_kd[joint_name]}"
+        )
+
     return OrbitConfig(
         kp=joint_kp,
         kd=joint_kd,
