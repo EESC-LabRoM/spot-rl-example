@@ -138,7 +138,7 @@ def main():
         # run everything in inference mode
         with torch.inference_mode():
             # agent stepping
-            actions = inference_session.run(None, {"obs": obs["debug"].cpu().numpy()})[
+            actions = inference_session.run(None, {"obs": obs["policy"].cpu().numpy()})[
                 0
             ].tolist()[0]
             # env stepping
