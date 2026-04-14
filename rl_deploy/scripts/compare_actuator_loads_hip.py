@@ -22,7 +22,7 @@ def main():
     parser.add_argument(
         "--hdf5_file",
         type=Path,
-        default=Path("spot_isaac_real.hdf5"),
+        default=Path("spot_isaac_real_20260414_171227.hdf5"),
         help="Path to the HDF5 log file.",
     )
 
@@ -40,7 +40,6 @@ def main():
 
     from rl_deploy.spot.constants import ORDERED_JOINT_NAMES_SPOT
     from rl_deploy.isaaclab_spot.isaac_model import (
-        JOINT_PARAMETER_LOOKUP_TABLE,
         HIP_DAMPING,
         HIP_STIFFNESS,
     )
@@ -56,23 +55,12 @@ def main():
 
     print(f"Reading data from {hdf5_path}")
     with h5py.File(hdf5_path, "r") as f:
-        if "spot_current_positions" in f:
-            joint_positions = f["spot_current_positions"][:]
-        else:
-            joint_positions = f["raw_joint_positions"][:]
-            print(
-                "WARNING: 'spot_current_positions' not found. Using 'raw_joint_positions' which may be residual."
-            )
-
-        if "spot_current_velocities" in f:
-            joint_velocities = f["spot_current_velocities"][:]
-        else:
-            joint_velocities = f["raw_joint_velocities"][:]
-
+        joint_positions = f["spot_current_positions"][:]
+        joint_velocities = f["spot_current_velocities"][:]
         joint_loads = f["raw_joint_loads"][:]
-        commanded_action = f["commanded_action"][:] if "commanded_action" in f else None
+        commanded_action = f["commanded_action"][:]
 
-    hip_joint_names = [name for name in ORDERED_JOINT_NAMES_SPOT if name.endswith("hx")]
+    hip_joint_names = [name for name in ORDERED_JOINT_NAMES_SPOT if name.endswith("hy")]
     hip_indices = [ORDERED_JOINT_NAMES_SPOT.index(name) for name in hip_joint_names]
 
     print(f"Found hip joints: {hip_joint_names} at indices {hip_indices}")
@@ -107,21 +95,13 @@ def main():
     ).contiguous()
     hip_loads_actual = joint_loads[:, hip_indices]
 
-    if commanded_action is not None and commanded_action.shape[1] == len(
-        ORDERED_JOINT_NAMES_SPOT
-    ):
-        cmd_pos = torch.tensor(
-            commanded_action[:, hip_indices], dtype=torch.float32, device=device
-        ).contiguous()
-        cmd_vel = torch.zeros_like(cmd_pos)
-    else:
-        print("Commanded action not found or shape mismatch. Cannot compute PD output.")
-        cmd_pos = hip_pos
-        cmd_vel = torch.zeros_like(hip_pos)
+    cmd_pos = torch.tensor(
+        commanded_action[:, hip_indices], dtype=torch.float32, device=device
+    ).contiguous()
 
     control_action = ArticulationActions(
         joint_positions=cmd_pos,
-        joint_velocities=cmd_vel,
+        joint_velocities=torch.zeros_like(cmd_pos),
         joint_efforts=torch.zeros_like(cmd_pos),
     )
 
@@ -131,17 +111,17 @@ def main():
 
     hip_loads_predicted = output_action.joint_efforts.detach().cpu().numpy()
     error_pos = (cmd_pos - hip_pos).cpu().numpy()
-    error_vel = (cmd_vel - hip_vel).cpu().numpy()
+    error_vel = hip_vel.cpu().numpy()
 
     out_dir.mkdir(exist_ok=True, parents=True)
 
-    limit = min(2000, num_timesteps)
+    limit = min(20000, num_timesteps)
 
     for i, joint_name in enumerate(hip_joint_names):
         fig, axes = plt.subplots(3, 1, figsize=(10, 15), sharex=True)
 
-        skip_steps = 50
-        max_limit = num_timesteps - skip_steps
+        skip_steps = 2_000
+        max_limit = num_timesteps  # - skip_steps
         if max_limit <= skip_steps:
             max_limit = num_timesteps
             skip_steps = 0
@@ -161,7 +141,7 @@ def main():
         ax_load.plot(
             time_plot,
             hip_loads_predicted[valid_range, i],
-            label="Predicted Load",
+            label="Simulated Load",
             color="red",
             alpha=0.7,
             linestyle="--",
@@ -175,13 +155,13 @@ def main():
         ax_pos = axes[1]
         ax_pos.plot(
             time_plot,
-            error_pos[valid_range, i],
-            label="Position Error",
+            hip_pos[valid_range, i],
+            label="Position ",
             color="green",
             alpha=0.7,
         )
-        ax_pos.set_title(f"Position Error: {joint_name}")
-        ax_pos.set_ylabel("Error (rad)")
+        ax_pos.set_title(f"Position : {joint_name}")
+        ax_pos.set_ylabel("Pose (rad)")
         ax_pos.legend()
         ax_pos.grid(True)
 
@@ -201,7 +181,7 @@ def main():
         ax_vel.grid(True)
 
         plt.tight_layout()
-        out_img = out_dir / f"actuator_load_comparison_{joint_name}.png"
+        out_img = out_dir / f"actuator_load_comparison_{joint_name[::-1]}.png"
         plt.savefig(out_img)
         plt.close(fig)
         print(f"Plot saved to {out_img}")

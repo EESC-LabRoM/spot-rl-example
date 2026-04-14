@@ -18,6 +18,8 @@ from rl_deploy.utils.event_divider import EventDivider
 from rl_deploy.utils.hdf5_logger import HDF5Logger
 
 from datetime import datetime
+
+
 def main():
     """Command line interface. change that is ok"""
     parser = argparse.ArgumentParser()

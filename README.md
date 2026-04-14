@@ -7,22 +7,6 @@ docker exec -it docker-isaaclab-1 bash
 Code & Dockerfile for Spot Reinforcement Learning demo
 
 
-# Installing without docker from locally cloned repo
-```bash
-sudo apt update
-sudo apt install python3-pip
-pip3 install gitman
-gitman update
-cd external/spot_python_sdk/prebuilt
-pip3 install bosdyn_api-4.0.0-py3-none-any.whl
-pip3 install bosdyn_core-4.0.0-py3-none-any.whl
-pip3 install bosdyn_client-4.0.0-py3-none-any.whl
-pip3 install pygame
-pip3 install pyPS4Controller
-pip3 install spatialmath-python
-pip3 install onnxruntime
-```
-
 # Example of mocked
 ```bash
 export BOSDYN_CLIENT_USERNAME=admin
@@ -31,12 +15,13 @@ uv run rl_deploy/spot_rl_demo.py  10.0.0.3 --mock
 uv run rl_deploy/spot_rl_isaac.py
 ```
 
-# Plot Acquisition Frequencies
+
+## Plot Acquisition Frequencies
 ```bash
 uv run rl_deploy/plot_acquisition_frequencies.py --hdf5_files spot_isaac_real.hdf5
 ```
 
-# Timing Diagnostics (dt_*)
+## Timing Diagnostics (dt_*)
 The codebase tracks several `dt` variables to monitor system timings and ensure it meets real-time requirements. For a 50Hz system, the expected cycle time is 0.02s (20ms).
 - `dt_acquisition_timestamp`: Time between consecutive state observations from the robot. Evaluated from `RobotStateStreamResponse`. Expected: **0.02s**.
 - `dt_total_step`: Total latency of the entire control step cycle. It represents the time between consecutive calls to the `OnnxCommandGenerator`. Expected: **~0.02s**.
@@ -77,38 +62,38 @@ The script also performs **Command Key Diagnostics** by loading the `proto_bytes
 - **Monotonicity check**: Verifies `user_command_key` increments by exactly 1 with no skips or regressions.
 - **Cross-check with state proto**: Confirms that `state[i].last_command.user_command_key == cmd[i-1].user_command_key`, ensuring the robot acknowledges each command in sequence.
 
-# Export Command Protos to JSON
+## Export Command Protos to JSON
 Parse the `proto_bytes` dataset (`JointControlStreamRequest`) from an HDF5 log and save all entries as a JSON list:
 ```bash
 uv run rl_deploy/utils/scripts/export_command_protos_to_json.py --hdf5_file spot_isaac_real.hdf5
 # Output: spot_isaac_real_commands.json
 ```
 
-# Test Knee Actuator
+## Test Knee Actuator
 You can validate the computed values of the spot knee actuator with positional torque speed limits using the test script, which generates a plot of the limits vs requested actions.
 ```bash
 uv run rl_deploy/isaaclab/test_knee_actuator.py
 ```
 
-# Compare Actuator Loads
+## Compare Actuator Loads
 You can plot the actual load against the predicted load from IsaacLab, as well as position and velocity errors, for each knee actuator individually. This will generate multiple plot figures in the `logs` directory.
 ```bash
 uv run rl_deploy/compare_actuator_loads.py --hdf5_file spot_isaac_real.hdf5
 ```
 
-# Plot All HDF5 Variables (Recursive)
+## Plot All HDF5 Variables (Recursive)
 You can recursively plot all variables in an HDF5 file. This is useful for new HDF5 structures like `spot_isaac_real_v2.hdf5`.
 ```bash
 uv run rl_deploy/plot_hdf5_v2.py --file spot_isaac_real_v2.hdf5
 ```
 
-# Replay and Compare Simulated vs Real Trajectories
+## Replay and Compare Simulated vs Real Trajectories
 You can replay the exact velocity commands recorded in the HDF5 log through the IsaacLab simulation and plot the resulting base velocities and key joint positions side-by-side with the real robot's telemetry. This script generates comparative plots in the `logs` directory.
 ```bash
 uv run rl_deploy/replay_and_compare_sim_real.py --hdf5_file spot_isaac_real.hdf5
 ```
 
-# Play relic 
+## Play relic 
 ```bash
 uv run rl_deploy/relic/play.py
 ```

@@ -22,7 +22,7 @@ def main():
     parser.add_argument(
         "--hdf5_file",
         type=Path,
-        default=Path("spot_isaac_real.hdf5"),
+        default=Path("spot_isaac_real_20260414_194845.hdf5"),
         help="Path to the HDF5 log file.",
     )
 
@@ -59,21 +59,10 @@ def main():
 
     print(f"Reading data from {hdf5_path}")
     with h5py.File(hdf5_path, "r") as f:
-        if "spot_current_positions" in f:
-            joint_positions = f["spot_current_positions"][:]
-        else:
-            joint_positions = f["raw_joint_positions"][:]
-            print(
-                "WARNING: 'spot_current_positions' not found. Using 'raw_joint_positions' which may be residual."
-            )
-
-        if "spot_current_velocities" in f:
-            joint_velocities = f["spot_current_velocities"][:]
-        else:
-            joint_velocities = f["raw_joint_velocities"][:]
-
+        joint_positions = f["spot_current_positions"][:]
+        joint_velocities = f["spot_current_velocities"][:]
         joint_loads = f["raw_joint_loads"][:]
-        commanded_action = f["commanded_action"][:] if "commanded_action" in f else None
+        commanded_action = f["commanded_action"][:]
 
     knee_joint_names = [
         name for name in ORDERED_JOINT_NAMES_SPOT if name.endswith("_kn")
@@ -88,7 +77,7 @@ def main():
     cfg = SpotKneeActuatorCfg(
         joint_names_expr=knee_joint_names,
         effort_limit=None,
-        stiffness=KNEE_STIFFNESS,
+        stiffness=KNEE_STIFFNESS / 0.7,
         damping=KNEE_DAMPING,
         enable_torque_speed_limit=True,
         joint_parameter_lookup=JOINT_PARAMETER_LOOKUP_TABLE,
@@ -114,21 +103,13 @@ def main():
     ).contiguous()
     knee_loads_actual = joint_loads[:, knee_indices]
 
-    if commanded_action is not None and commanded_action.shape[1] == len(
-        ORDERED_JOINT_NAMES_SPOT
-    ):
-        cmd_pos = torch.tensor(
-            commanded_action[:, knee_indices], dtype=torch.float32, device=device
-        ).contiguous()
-        cmd_vel = torch.zeros_like(cmd_pos)
-    else:
-        print("Commanded action not found or shape mismatch. Cannot compute PD output.")
-        cmd_pos = knee_pos
-        cmd_vel = torch.zeros_like(knee_pos)
+    cmd_pos = torch.tensor(
+        commanded_action[:, knee_indices], dtype=torch.float32, device=device
+    ).contiguous()
 
     control_action = ArticulationActions(
         joint_positions=cmd_pos,
-        joint_velocities=cmd_vel,
+        joint_velocities=torch.zeros_like(cmd_pos),
         joint_efforts=torch.zeros_like(cmd_pos),
     )
 
@@ -138,17 +119,17 @@ def main():
 
     knee_loads_predicted = output_action.joint_efforts.detach().cpu().numpy()
     error_pos = (cmd_pos - knee_pos).cpu().numpy()
-    error_vel = (cmd_vel - knee_vel).cpu().numpy()
+    knee_vel = knee_vel.cpu().numpy()
 
     out_dir.mkdir(exist_ok=True, parents=True)
 
-    limit = min(2000, num_timesteps)
+    limit = min(20000, num_timesteps)
 
     for i, joint_name in enumerate(knee_joint_names):
         fig, axes = plt.subplots(3, 1, figsize=(10, 15), sharex=True)
 
-        skip_steps = 50
-        max_limit = num_timesteps - skip_steps
+        skip_steps = 10_000
+        max_limit = num_timesteps  # - skip_steps
         if max_limit <= skip_steps:
             max_limit = num_timesteps
             skip_steps = 0
@@ -182,13 +163,13 @@ def main():
         ax_pos = axes[1]
         ax_pos.plot(
             time_plot,
-            error_pos[valid_range, i],
-            label="Position Error",
+            knee_pos[valid_range, i],
+            label="Position",
             color="green",
             alpha=0.7,
         )
-        ax_pos.set_title(f"Position Error: {joint_name}")
-        ax_pos.set_ylabel("Error (rad)")
+        ax_pos.set_title(f"Position: {joint_name}")
+        ax_pos.set_ylabel("Pose (rad)")
         ax_pos.legend()
         ax_pos.grid(True)
 
@@ -196,7 +177,7 @@ def main():
         ax_vel = axes[2]
         ax_vel.plot(
             time_plot,
-            error_vel[valid_range, i],
+            knee_vel[valid_range, i],
             label="Velocity Error",
             color="orange",
             alpha=0.7,
