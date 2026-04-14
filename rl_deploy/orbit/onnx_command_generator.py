@@ -66,18 +66,14 @@ class StateHandler:
         self._context.event.set()
 
 
-def print_observations(observations: List[float]):
+def print_observations(observations: dict[str, list]):
     """debug function to print out the observation data used as model input
 
     arguments
     observations -- list of float values ready to be passed into the model
     """
-    print("base_linear_velocity:", observations[0:3])
-    print("base_angular_velocity:", observations[3:6])
-    print("projected_gravity:", observations[6:9])
-    print("joint_positions", observations[12:24])
-    print("joint_velocity", observations[24:36])
-    print("last_actions", observations[36:48])
+    for key, value in observations.items():
+        print(f"{key}: {value}\n")
 
 
 JOINTS_ORDER_RELIC = [
@@ -137,7 +133,7 @@ class OnnxCommandGenerator:
         self.logger = logger
         self.mock = mock
         self._inference_session = ort.InferenceSession(policy_file_name)
-        self._last_action = extract_shift_from_onnx(policy_file_name)[:12]
+        self._last_action = [0] * 12  # extract_shift_from_onnx(policy_file_name)[:12]
         self._count = 1
         self._init_pos = None
         self._init_load = None
@@ -262,8 +258,6 @@ class OnnxCommandGenerator:
 
         t_post_start = time.perf_counter()
         action = output
-        print("Inputs: ", inputs_dict)
-        print("Action: ", action)
         t_post_end = time.perf_counter()
 
         # generate proto message from target joint positions
@@ -384,8 +378,7 @@ class OnnxCommandGenerator:
             .reshape(1, -1),
             "last_actions": np.array(self._last_action)
             .astype(np.float32)
-            .reshape(1, -1)
-            * 0.2,
+            .reshape(1, -1),
         }
 
     def create_proto(self, pos_command: List[float]):
