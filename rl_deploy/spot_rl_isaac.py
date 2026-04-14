@@ -93,7 +93,7 @@ def main():
     spot.start_command_stream(command_generator)
     # gamepad.start_listening()
 
-    for i in range(200):
+    for i in range(20000):
         # run everything in inference mode
         with torch.inference_mode():
             actions = spot.command_update().to(env_cfg.sim.device)

@@ -61,7 +61,6 @@ from isaaclab.envs import DirectMARLEnv, multi_agent_to_single_agent
 from isaaclab.utils.dict import print_dict
 from isaaclab_rl.rsl_rl import (
     RslRlVecEnvWrapper,
-
 )
 from isaaclab_tasks.utils import parse_env_cfg
 from tqdm import tqdm
@@ -82,6 +81,7 @@ gym.register(
     },
 )
 
+
 def main():
     """Play with RSL-RL agent."""
     # parse configuration
@@ -101,7 +101,9 @@ def main():
 
     # create isaac environment
     env = gym.make(
-        "Isaac-Spot-Interlimb-Phase-1-v0", cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None
+        "Isaac-Spot-Interlimb-Phase-1-v0",
+        cfg=env_cfg,
+        render_mode="rgb_array" if args_cli.video else None,
     )
     # wrap for video recording
     if args_cli.video:
@@ -136,9 +138,13 @@ def main():
         # run everything in inference mode
         with torch.inference_mode():
             # agent stepping
-            actions = inference_session.run(None, {"obs": obs['policy'].cpu().numpy()})[0].tolist()[0]
+            actions = inference_session.run(None, {"obs": obs["debug"].cpu().numpy()})[
+                0
+            ].tolist()[0]
             # env stepping
-            obs, _, _, _ = env.step(torch.tensor(actions, device=args_cli.device).unsqueeze(0))
+            obs, _, _, _ = env.step(
+                torch.tensor(actions, device=args_cli.device).unsqueeze(0)
+            )
         if args_cli.video:
             timestep += 1
             progress_bar.update(1)

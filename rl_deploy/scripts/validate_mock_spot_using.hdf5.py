@@ -101,7 +101,14 @@ class PipelineValidator:
                 isaac_joint_pos = torch.tensor(f["obs/spot/joint_pos"][i]).unsqueeze(0)
                 isaac_joint_vel = torch.tensor(f["obs/spot/joint_vel"][i]).unsqueeze(0)
                 isaac_last_action = torch.tensor(f["obs/spot/actions"][i]).unsqueeze(0)
-
+                print("Step ", i)
+                print("base_lin_vel:", isaac_base_lin_vel)
+                print("base_ang_vel:", isaac_base_ang_vel)
+                print("projected_gravity:", isaac_projected_gravity)
+                print("velocity_commands:", isaac_velocity_cmd)
+                print("joint_positions:", isaac_joint_pos)
+                print("joint_velocities:", isaac_joint_vel)
+                print("last_actions:", isaac_last_action)
                 # Update context with the actual velocity command & last action from this step
                 self.context.velocity_cmd = isaac_velocity_cmd.tolist()
                 self.generator._last_action = isaac_last_action.tolist()
@@ -119,6 +126,15 @@ class PipelineValidator:
                 # -------------------------------------------------------------
                 # 4. Compare Pipeline Output vs IsaacLab Ground Truth
                 # -------------------------------------------------------------
+                #         input_names = [
+                #     "base_linear_velocity",
+                #     "base_angular_velocity",
+                #     "projected_gravity",
+                #     "velocity_commands",
+                #     "joint_positions",
+                #     "joint_velocities",
+                #     "last_actions",
+                # ]
                 self._compare_vectors(
                     "Base Linear Velocity",
                     isaac_base_lin_vel,
@@ -157,8 +173,8 @@ class PipelineValidator:
 
                 self._compare_vectors(
                     "Actions",
-                    action_dict["actions"][0],
-                    pipeline_action.joint_command.position[:12],
+                    expected=action_dict["actions"][0],
+                    actual=pipeline_action.joint_command.position[:12],
                     step=i,
                     tolerance=1e-2,
                 )

@@ -1,37 +1,31 @@
 from __future__ import annotations
 
-import torch
-from isaaclab.managers.recorder_manager import (
-    RecorderManagerBaseCfg,
-    RecorderTerm,
-    RecorderTermCfg,
-)
-from isaaclab.utils import configclass
+from datetime import datetime
 
 import isaaclab.sim as sim_utils
 import isaaclab_tasks.manager_based.locomotion.velocity.mdp as mdp
+import torch
 from isaaclab.actuators import (
     DelayedPDActuatorCfg,
 )
-from isaaclab.assets import ArticulationCfg, AssetBaseCfg
+from isaaclab.assets import Articulation, ArticulationCfg, AssetBaseCfg
 from isaaclab.envs import ManagerBasedEnv, ManagerBasedEnvCfg, ViewerCfg
 from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
+from isaaclab.managers.recorder_manager import (
+    RecorderManagerBaseCfg,
+    RecorderTerm,
+    RecorderTermCfg,
+)
 from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR, ISAACLAB_NUCLEUS_DIR
-from datetime import datetime
+from isaaclab.utils.math import sample_uniform
 
-
-from rl_deploy.spot.constants import (
-    ORDERED_JOINT_NAMES_SPOT_ARM,
-    ORDERED_JOINT_NAMES_SPOT_BASE,
-    ORDERED_JOINT_NAMES_SPOT,
-)
 from rl_deploy.isaaclab_spot.isaac_model import (
     ARM_ARMATURE,
     ARM_DAMPING,
@@ -47,6 +41,14 @@ from rl_deploy.isaaclab_spot.isaac_model import (
     SPOT_DEFAULT_POS,
     SpotKneeActuatorCfg,
 )
+from rl_deploy.spot.constants import (
+    ORDERED_JOINT_NAMES_SPOT,
+    ORDERED_JOINT_NAMES_SPOT_ARM,
+    ORDERED_JOINT_NAMES_SPOT_BASE,
+)
+
+_arm_poses_cache: dict[str, torch.Tensor] = {}
+
 
 SPOT_ARM_CFG = ArticulationCfg(
     spawn=sim_utils.UrdfFileCfg(
@@ -384,11 +386,150 @@ class SpotTerminationsCfg:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
 
 
+ARM_STOW_JOINT_POS: dict[str, float] = {
+    "arm_sh0": 0.0,
+    "arm_sh1": -3.1415,
+    "arm_el0": 3.1415,
+    "arm_el1": 1.5655,
+    "arm_wr0": 0.00,
+    "arm_wr1": -1.5655,
+    "arm_f1x": 0,
+}
+
+
+def _load_arm_poses_from_csv(
+    csv_path: str,
+    arm_joint_names: list[str],
+    device: torch.device | str,
+    up_sample_stow: int = 1000,
+) -> torch.Tensor:
+    """Return a ``(N, num_arm_joints)`` tensor with all arm poses from the CSV.
+
+    Results are cached by ``csv_path`` so the file is read only once.
+    The ``ARM_STOW_JOINT_POS`` is appended to the loaded poses.
+    """
+    cache_key = csv_path
+    if cache_key not in _arm_poses_cache:
+        # df = pd.read_csv(csv_path)
+        # csv_poses = torch.tensor(
+        #     df[arm_joint_names].values,
+        #     dtype=torch.float32,
+        # )
+
+        # Create stow pose tensor in the order of arm_joint_names
+        stow_pose = torch.tensor(
+            [[ARM_STOW_JOINT_POS.get(name, 0.0) for name in arm_joint_names]],
+            dtype=torch.float32,
+        ).repeat(up_sample_stow, 1)
+
+        # Concatenate stow pose to the loaded poses
+        _arm_poses_cache[cache_key] = (
+            stow_pose  # torch.cat([stow_pose, csv_poses], dim=0)
+        )
+
+    return _arm_poses_cache[cache_key].to(device)
+
+
+def reset_base_and_arm_joints_from_csv(
+    env: ManagerBasedEnv,
+    env_ids: torch.Tensor,
+    position_range: tuple[float, float],
+    velocity_range: tuple[float, float],
+    csv_path: str,
+    arm_joint_names: list[str],
+    base_joint_names: list[str],
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> None:
+    """Reset base joints around their default positions and arm joints to poses sampled from a CSV.
+
+    Base joints are randomized uniformly within ``position_range`` / ``velocity_range`` of their
+    default values (identical behaviour to :func:`reset_joints_around_default`).
+    Arm joints are set to a randomly chosen row from ``csv_path``, with zero velocity.
+
+    The CSV is read once and cached in memory for the lifetime of the process.
+
+    Args:
+        env: The environment instance.
+        env_ids: Indices of environments to reset.
+        position_range: ``(min, max)`` offset applied around the default base-joint positions.
+        velocity_range: ``(min, max)`` offset applied around the default base-joint velocities.
+        csv_path: Absolute path to the CSV file containing arm joint poses.  The file must
+            contain the columns listed in ``arm_joint_names`` in that exact order.
+        arm_joint_names: Ordered list of arm joint names matching the CSV column headers.
+        base_joint_names: Ordered list of base (leg) joint names to randomise.
+        asset_cfg: Scene entity config identifying the robot articulation.
+    """
+    asset: Articulation = env.scene[asset_cfg.name]
+
+    arm_joint_ids, _ = asset.find_joints(arm_joint_names, preserve_order=True)
+    base_joint_ids, _ = asset.find_joints(base_joint_names, preserve_order=True)
+
+    # ------------------------------------------------------------------
+    # Build full joint state starting from the current sim state so that
+    # joints we do NOT touch keep their existing values.
+    # ------------------------------------------------------------------
+    joint_pos = asset.data.default_joint_pos[env_ids].clone()
+    joint_vel = asset.data.default_joint_vel[env_ids].clone()
+
+    # -- Base joints: randomise around default --
+    base_default_pos = asset.data.default_joint_pos[env_ids][:, base_joint_ids]
+    base_default_vel = asset.data.default_joint_vel[env_ids][:, base_joint_ids]
+
+    base_min_pos = base_default_pos + position_range[0]
+    base_max_pos = base_default_pos + position_range[1]
+    base_min_vel = base_default_vel + velocity_range[0]
+    base_max_vel = base_default_vel + velocity_range[1]
+
+    # Clip to soft joint limits
+    base_pos_limits = asset.data.soft_joint_pos_limits[env_ids][:, base_joint_ids]
+    base_min_pos = torch.clamp(
+        base_min_pos, min=base_pos_limits[..., 0], max=base_pos_limits[..., 1]
+    )
+    base_max_pos = torch.clamp(
+        base_max_pos, min=base_pos_limits[..., 0], max=base_pos_limits[..., 1]
+    )
+
+    base_vel_limits = asset.data.soft_joint_vel_limits[env_ids][:, base_joint_ids]
+    base_min_vel = torch.clamp(base_min_vel, min=-base_vel_limits, max=base_vel_limits)
+    base_max_vel = torch.clamp(base_max_vel, min=-base_vel_limits, max=base_vel_limits)
+
+    joint_pos[:, base_joint_ids] = sample_uniform(
+        base_min_pos, base_max_pos, base_min_pos.shape, base_min_pos.device
+    )
+    joint_vel[:, base_joint_ids] = sample_uniform(
+        base_min_vel, base_max_vel, base_min_vel.shape, base_min_vel.device
+    )
+
+    # -- Arm joints: sample a random row from the CSV per environment --
+    arm_poses = _load_arm_poses_from_csv(csv_path, arm_joint_names, asset.device)
+    num_poses = arm_poses.shape[0]
+    num_envs_to_reset = len(env_ids)
+    sampled_indices = torch.randint(
+        0, num_poses, (num_envs_to_reset,), device=asset.device
+    )
+    joint_pos[:, arm_joint_ids] = arm_poses[sampled_indices]
+    joint_vel[:, arm_joint_ids] = 0.0
+    print("Initial Joint Pos: ", joint_pos)
+    print("Initial Joint Vel: ", joint_vel)
+    asset.write_joint_state_to_sim(joint_pos, joint_vel, env_ids=env_ids)
+
+
 @configclass
 class SpotEventCfg:
     """Configuration for randomization."""
 
-    reset_to_default = EventTerm(func=mdp.reset_scene_to_default, mode="reset")
+    reset_robot_joints = EventTerm(
+        func=reset_base_and_arm_joints_from_csv,
+        mode="reset",
+        params={
+            "position_range": (-0.2, 0.2),
+            "velocity_range": (-2.5, 2.5),
+            "csv_path": "stow.csv",
+            "arm_joint_names": ORDERED_JOINT_NAMES_SPOT_ARM,
+            "base_joint_names": ORDERED_JOINT_NAMES_SPOT_BASE,
+            "asset_cfg": SceneEntityCfg("robot"),
+        },
+    )
 
 
 # Copyright (c) 2022-2025, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).

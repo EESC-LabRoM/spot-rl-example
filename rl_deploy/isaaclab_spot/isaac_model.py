@@ -19,7 +19,7 @@ from torch._tensor import Tensor
 
 from .spot_knee_actuator import SpotKneeActuatorCfg
 
-SPOT_DEFAULT_POS: tuple[float, float, float] = (0.0, 0.0, 0.65)
+SPOT_DEFAULT_POS: tuple[float, float, float] = (0.0, 0.0, 0.60)
 
 ARM_JOINT_NAMES = [
     "arm_sh0",
