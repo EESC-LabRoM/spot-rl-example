@@ -150,8 +150,42 @@ class OnnxCommandGenerator:
 
         self._triggered_safety = False
         self._safety_pos = None
+        self._last_contact_binary = None
 
         self._safe_limits = self._generate_safe_limits()
+
+    def _timestamp_to_seconds(self, timestamp) -> float:
+        return float(timestamp.seconds) + float(timestamp.nanos) * 1e-9
+
+    def _extract_contact_telemetry(self, state: RobotStateStreamResponse):
+        contact_enum = list(state.contact_states[:4])
+        if len(contact_enum) < 4:
+            contact_enum.extend([0] * (4 - len(contact_enum)))
+
+        contact_binary = [1 if value == 1 else 0 for value in contact_enum]
+        if self._last_contact_binary is None:
+            contact_transition = [0, 0, 0, 0]
+        else:
+            contact_transition = [
+                current - previous
+                for current, previous in zip(contact_binary, self._last_contact_binary)
+            ]
+
+        self._last_contact_binary = contact_binary
+        return contact_enum, contact_binary, contact_transition
+
+    def _extract_latest_imu(self, state: RobotStateStreamResponse):
+        if len(state.inertial_state.packets) == 0:
+            return [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], None
+
+        packet = state.inertial_state.packets[-1]
+        acceleration = packet.acceleration_rt_odom_in_link_frame
+        angular_velocity = packet.angular_velocity_rt_odom_in_link_frame
+        return (
+            [acceleration.x, acceleration.y, acceleration.z],
+            [angular_velocity.x, angular_velocity.y, angular_velocity.z],
+            self._timestamp_to_seconds(packet.timestamp),
+        )
 
     def _generate_safe_limits(self):
         """
@@ -273,6 +307,16 @@ class OnnxCommandGenerator:
             )
 
             raw_state = self._context.latest_state
+            (
+                foot_contact_enum,
+                foot_contact_binary,
+                foot_contact_transition,
+            ) = self._extract_contact_telemetry(raw_state)
+            (
+                imu_linear_acceleration,
+                imu_angular_velocity,
+                imu_packet_timestamp,
+            ) = self._extract_latest_imu(raw_state)
             self.logger.log_state(
                 raw_base_linear_velocity=ob.get_base_linear_velocity(raw_state),
                 raw_base_angular_velocity=ob.get_base_angular_velocity(raw_state),
@@ -301,6 +345,19 @@ class OnnxCommandGenerator:
                 dt_state_arrival_to_compute=dt_state_arrival_to_compute,
                 raw_state_proto_bytes=raw_state.SerializeToString(),
                 proto_bytes=proto.SerializeToString(),
+                foot_contact_enum=foot_contact_enum,
+                foot_contact_binary=foot_contact_binary,
+                foot_contact_transition=foot_contact_transition,
+                imu_linear_acceleration=imu_linear_acceleration,
+                imu_angular_velocity=imu_angular_velocity,
+                imu_packet_timestamp=imu_packet_timestamp,
+                command_user_key=proto.joint_command.user_command_key,
+                command_request_timestamp=self._timestamp_to_seconds(
+                    proto.header.request_timestamp
+                ),
+                command_end_time=self._timestamp_to_seconds(
+                    proto.joint_command.end_time
+                ),
             )
 
         # cache data for history and logging

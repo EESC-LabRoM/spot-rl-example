@@ -37,6 +37,12 @@ def main():
         default=f"spot_isaac_real_{datetime.now().strftime('%Y%m%d_%H%M%S')}.hdf5",
         help="Path to save HDF5 log of observations.",
     )
+    parser.add_argument(
+        "--run_metadata",
+        type=Path,
+        default=None,
+        help="Optional JSON sidecar with run metadata to store as HDF5 attributes.",
+    )
     options = parser.parse_args()
 
     env_config = orbit.orbit_configuration.detect_config_file(options.policy_file_path)
@@ -49,7 +55,12 @@ def main():
     state_handler = StateHandler(context)
     print("Verbose option: ", options.verbose)
 
-    logger = HDF5Logger(options.hdf5_log)
+    metadata_path = options.run_metadata
+    if metadata_path is None:
+        default_metadata_path = Path(options.hdf5_log).with_suffix(".metadata.json")
+        metadata_path = default_metadata_path if default_metadata_path.exists() else None
+
+    logger = HDF5Logger(options.hdf5_log, metadata_path=metadata_path)
     command_generator = OnnxCommandGenerator(
         context, config, policy_file, options.verbose, logger=logger
     )
