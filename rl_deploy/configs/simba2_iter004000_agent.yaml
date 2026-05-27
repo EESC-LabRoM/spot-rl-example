@@ -1,0 +1,77 @@
+seed: 813731
+device: cuda:0
+num_steps_per_env: 24
+max_iterations: 10000
+empirical_normalization: false
+obs_groups:
+  actor:
+  - policy
+  critic:
+  - policy
+clip_actions: null
+check_for_nan: true
+save_interval: 200
+experiment_name: spot_locomotion_simba
+run_name: simba2
+logger: wandb
+neptune_project: isaaclab
+wandb_project: myrelic
+resume: false
+load_run: .*
+load_checkpoint: model_.*.pt
+class_name: OnPolicyRunner
+actor:
+  class_name: isaaclab_tasks.utils.rsl_rl.models.simba.SimbaModel
+  hidden_dims:
+  - 128
+  - 128
+  - 128
+  activation: relu
+  obs_normalization: true
+  distribution_cfg:
+    class_name: GaussianDistribution
+    init_std: 1.0
+    std_type: scalar
+  simba_hidden_dim: 256
+  simba_num_blocks: 2
+  simba_final_gain: 0.01
+  simba_depth_scale: true
+critic:
+  class_name: isaaclab_tasks.utils.rsl_rl.models.simba.SimbaModel
+  hidden_dims:
+  - 128
+  - 128
+  - 128
+  activation: relu
+  obs_normalization: true
+  distribution_cfg: null
+  simba_hidden_dim: 256
+  simba_num_blocks: 2
+  simba_final_gain: 1.0
+  simba_depth_scale: true
+algorithm:
+  class_name: PPO
+  num_learning_epochs: 5
+  num_mini_batches: 4
+  learning_rate: 0.0015
+  schedule: adaptive
+  gamma: 0.99
+  lam: 0.95
+  entropy_coef: 0.005
+  desired_kl: 0.01
+  max_grad_norm: 1.0
+  optimizer: adam
+  value_loss_coef: 1.0
+  use_clipped_value_loss: true
+  clip_param: 0.2
+  normalize_advantage_per_mini_batch: false
+  share_cnn_encoders: false
+  rnd_cfg: null
+  symmetry_cfg:
+    use_data_augmentation: true
+    use_mirror_loss: false
+    data_augmentation_func: relic.tasks.locomotion.locomotion_env_cfg:left_right_symmetry_obs
+    mirror_loss_coeff: 0.0
+policy: {}
+wandb_entity: tommaselli
+store_code_state: false

@@ -5,3 +5,5 @@ logs/
 *.png
 *.egg-info
 rosbag*
+myrelic_checkpoints/
+external/

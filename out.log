@@ -1,0 +1,528 @@
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/dell/Documents/deploy/spot-rl-example/.venv/lib/python3.11/site-packages/isaaclab/apps/isaaclab.python.headless.kit
+Setting arm_sh0 kp to 1020 and kd to 10.2
+Setting arm_sh1 kp to 255 and kd to 15.3
+Setting arm_el0 kp to 204 and kd to 10.2
+Setting arm_el1 kp to 102 and kd to 2.04
+Setting arm_wr0 kp to 102 and kd to 2.04
+Setting arm_wr1 kp to 102 and kd to 2.04
+Setting arm_f1x kp to 16.0 and kd to 0.32
+
+[36m======================================================================================[0m
+[36m[1m[INFO][IsaacLab]: Logging to file: /tmp/isaaclab/logs/isaaclab_2026-04-16_21-49-47.log[0m
+[36m======================================================================================[0m
+
+[33m21:49:47 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+Loading user config located at: '/home/dell/Documents/deploy/spot-rl-example/.venv/lib/python3.11/site-packages/isaacsim/kit/data/Kit/Isaac-Sim/5.1/user.config.json'
+[Info] [carb] Logging to file: /home/dell/Documents/deploy/spot-rl-example/.venv/lib/python3.11/site-packages/isaacsim/kit/logs/Kit/Isaac-Sim/5.1/kit_20260416_214943.log
+2026-04-17T00:49:43Z [109ms] [Warning] [omni.usd_config.extension] Enable omni.materialx.libs extension to use MaterialX
+2026-04-17T00:49:44Z [517ms] [Warning] [carb] Acquiring non optional plugin interface which is not listed as dependency: [omni::physx::IPhysxBenchmarks v1.0] (plugin: <default plugin>), by client: omni.physics.physx.plugin. Add it to CARB_PLUGIN_IMPL_DEPS() macro of a client.
+2026-04-17T00:49:44Z [525ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+2026-04-17T00:49:46Z [3,039ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (RPL-P)
+2026-04-17T00:49:46Z [3,039ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (RPL-P)
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 565.77        | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA RTX 2000 Ada Generation.. | Yes: 0 |     | 8188    MB | 10de      | 0          |
+|     |                                  |        |     |            | 28b8      | 20976319.. |
+|     |                                  |        |     |            | 1         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | Intel(R) Graphics (RPL-P)        |        |     | 23834   MB | 8086      | 0          |
+|     |                                  |        |     |            | a7a0      | 8680a0a7.. |
+|     |                                  |        |     |            | 0         |            |
+|=============================================================================================|
+| OS: 22.04.5 LTS (Jammy Jellyfish) ubuntu, Version: 22.04.5, Kernel: 6.8.0-107-generic
+| XServer Vendor: The X.Org Foundation, XServer Version: 12101004 (1.21.1.4)
+| Processor: 13th Gen Intel(R) Core(TM) i9-13900H
+| Bare Metal Cores: 14 | Bare Metal Logical Cores: 28
+| Available Cores:  20 
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 31779 | Free Memory: 18486
+| Total Page/Swap (MB): 1952 | Free Page/Swap: 1952
+|---------------------------------------------------------------------------------------------|
+2026-04-17T00:49:46Z [3,323ms] [Warning] [gpu.foundation.plugin] CPU performance profile is set to powersave. This profile sets the CPU to the lowest frequency reducing performance.
+2026-04-17T00:49:46Z [3,333ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-04-17T00:49:46Z [3,333ms] [Warning] [gpu.foundation.plugin] Detected IOMMU is enabled. Running CUDA peer-to-peer bandwidth and latency validation.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 198.34 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   1.89 
+
+   CPU     0 
+     0   1.52 
+2026-04-17T00:49:47Z [4,277ms] [Warning] [isaaclab.envs.manager_based_env] Seed not set for the environment. The environment creation may not be deterministic.
+2026-04-17T00:49:47Z [4,356ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (RPL-P)
+2026-04-17T00:49:47Z [4,356ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: Intel(R) Graphics (RPL-P)
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 565.77        | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA RTX 2000 Ada Generation.. | Yes: 0 |     | 8188    MB | 10de      | 0          |
+|     |                                  |        |     |            | 28b8      | 20976319.. |
+|     |                                  |        |     |            | 1         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | Intel(R) Graphics (RPL-P)        |        |     | 23834   MB | 8086      | 0          |
+|     |                                  |        |     |            | a7a0      | 8680a0a7.. |
+|     |                                  |        |     |            | 0         |            |
+|=============================================================================================|
+| OS: 22.04.5 LTS (Jammy Jellyfish) ubuntu, Version: 22.04.5, Kernel: 6.8.0-107-generic
+| XServer Vendor: The X.Org Foundation, XServer Version: 12101004 (1.21.1.4)
+| Processor: 13th Gen Intel(R) Core(TM) i9-13900H
+| Bare Metal Cores: 14 | Bare Metal Logical Cores: 28
+| Available Cores:  20 
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 31779 | Free Memory: 18204
+| Total Page/Swap (MB): 1952 | Free Page/Swap: 1952
+|---------------------------------------------------------------------------------------------|
+2026-04-17T00:49:48Z [4,621ms] [Warning] [gpu.foundation.plugin] CPU performance profile is set to powersave. This profile sets the CPU to the lowest frequency reducing performance.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 181.92 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   1.90 
+
+   CPU     0 
+     0   1.41 
+2026-04-17T00:49:48Z [4,640ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-04-17T00:49:48Z [4,640ms] [Warning] [gpu.foundation.plugin] Detected IOMMU is enabled. Running CUDA peer-to-peer bandwidth and latency validation.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 181.69 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   1.89 
+
+   CPU     0 
+     0   1.41 
+2026-04-17T00:49:48Z [5,154ms] [Warning] [omni.graph.visualization.nodes._impl.extension] No Viewport Window to add omni.graph.visualization.nodes-2.1.3 scene to
+2026-04-17T00:49:48Z [5,419ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@ <0x5e610e410f70>)
+
+2026-04-17T00:49:48Z [5,419ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:48Z [5,420ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:48Z [5,420ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@ <0x5e610e41a090>)
+
+2026-04-17T00:49:48Z [5,420ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@ <0x5e610e410f70>)
+
+2026-04-17T00:49:48Z [5,420ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:48Z [5,420ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:48Z [5,420ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@ <0x5e610e41a090>)
+
+2026-04-17T00:49:49Z [5,517ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@ <0x5e610e410f70>)
+
+2026-04-17T00:49:49Z [5,517ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,517ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,517ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@ <0x5e610e41a090>)
+
+2026-04-17T00:49:49Z [5,517ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@ <0x5e610e410f70>)
+
+2026-04-17T00:49:49Z [5,517ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,517ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,517ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@ <0x5e610e41a090>)
+
+2026-04-17T00:49:49Z [5,583ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@ <0x5e610e410f70>)
+
+2026-04-17T00:49:49Z [5,584ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,584ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,584ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@ <0x5e610e41a090>)
+
+2026-04-17T00:49:49Z [5,584ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@ <0x5e610e410f70>)
+
+2026-04-17T00:49:49Z [5,584ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,584ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,584ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@ <0x5e610e41a090>)
+
+2026-04-17T00:49:49Z [5,655ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@ <0x5e610e410f70>)
+
+2026-04-17T00:49:49Z [5,655ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,655ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,655ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@ <0x5e610e41a090>)
+
+2026-04-17T00:49:49Z [5,656ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@ <0x5e610e410f70>)
+
+2026-04-17T00:49:49Z [5,656ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,656ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,656ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@ <0x5e610e41a090>)
+
+2026-04-17T00:49:49Z [5,726ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@ <0x5e610e410f70>)
+
+2026-04-17T00:49:49Z [5,726ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,726ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,726ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@ <0x5e610e41a090>)
+
+2026-04-17T00:49:49Z [5,726ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@ <0x5e610e410f70>)
+
+2026-04-17T00:49:49Z [5,726ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,726ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,726ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@ <0x5e610e41a090>)
+
+2026-04-17T00:49:49Z [5,751ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,751ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,751ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,751ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,751ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,752ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,752ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,752ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,752ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,752ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,753ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,753ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,753ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,753ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,753ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,754ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,754ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,754ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,754ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,754ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,756ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,756ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,756ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,756ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,756ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,757ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,757ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,757ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,757ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,757ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,758ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,758ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,758ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,758ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,758ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,759ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,759ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,759ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,759ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,759ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,760ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,760ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,760ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,760ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,760ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,761ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,761ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,761ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,761ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,761ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,762ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,762ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,762ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,763ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,763ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,764ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,764ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,764ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,764ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,764ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,765ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,765ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,765ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,765ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,765ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,766ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,766ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,766ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,766ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,766ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,768ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,768ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,768ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,768ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,768ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3fe180>)
+
+2026-04-17T00:49:49Z [5,769ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,769ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,769ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,769ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,769ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </spot_with_arm/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @/tmp/IsaacLab/usd_20260416_214948_2258/spot_with_arm.usd@ <0x5e610e3f95d0>)
+
+2026-04-17T00:49:49Z [5,879ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </World/envs/env_0/Robot/fl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fl_foot/visuals> (recomposing stage on stage @anon:0x5e60f612ed90:World0.usd@ <0x5e60f6134330>)
+
+2026-04-17T00:49:49Z [5,880ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </World/envs/env_0/Robot/fr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/fr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/fr_foot/visuals> (recomposing stage on stage @anon:0x5e60f612ed90:World0.usd@ <0x5e60f6134330>)
+
+2026-04-17T00:49:49Z [5,880ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </World/envs/env_0/Robot/hr_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hr_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hr_foot/visuals> (recomposing stage on stage @anon:0x5e60f612ed90:World0.usd@ <0x5e60f6134330>)
+
+[INFO]: Base environment:
+	Environment device    : cuda:0
+	Environment seed      : None
+	Physics step-size     : 0.002
+	Rendering step-size   : 0.02
+	Environment step-size : 0.02
+[33m21:49:49 [semantics.py] WARNING: Failed to add labels to prim /World/envs/env_0/Robot using Replicator API: No module named 'omni.replicator'. 
+Please ensure Replicator API is enabled by passing '--enable_cameras' to the AppLauncher.
+Falling back to legacy approach.[0m
+[33m21:49:49 [terrain_importer.py] WARNING: Visual material specified for ground plane but no diffuse color found. Using default color: (0.0, 0.0, 0.0)[0m
+[INFO]: Time taken for scene creation : 2.543835 seconds
+[INFO]: Scene manager:  <class InteractiveScene>
+	Number of environments: 1
+	Environment spacing   : 2.5
+	Source prim name      : /World/envs/env_0
+	Global prim paths     : ['/World/ground']
+	Replicate physics     : True
+[INFO]: Starting the simulation. This may take a few seconds. Please wait...
+[INFO]: Time taken for simulation start : 0.719630 seconds
+[INFO] Event Manager:  <EventManager> contains 1 active terms.
++-------------------------------------+
+| Active Event Terms in Mode: 'reset' |
++----------+--------------------------+
+|  Index   | Name                     |
++----------+--------------------------+
+|    0     | reset_to_default         |
++----------+--------------------------+
+
+[INFO] Recorder Manager:  <RecorderManager> contains 4 active terms.
++--------------------------------------------------+
+|              Active Recorder Terms               |
++-------+------------------------------------------+
+| Index | Name                                     |
++-------+------------------------------------------+
+|   0   | record_post_step_states                  |
+|   1   | record_pre_step_actions                  |
+|   2   | record_pre_step_flat_policy_observations |
+|   3   | record_post_step_processed_actions       |
++-------+------------------------------------------+
+
+[INFO] Action Manager:  <ActionManager> contains 1 active terms.
++------------------------------------+
+|  Active Action Terms (shape: 19)   |
++--------+-------------+-------------+
+| Index  | Name        |   Dimension |
++--------+-------------+-------------+
+|   0    | joint_pos   |          19 |
++--------+-------------+-------------+
+
+[INFO] Observation Manager: <ObservationManager> contains 2 groups.
++--------------------------------------------+
+| Active Observation Terms in Group: 'spot'  |
++----------+----------------------+----------+
+|  Index   | Name                 |  Shape   |
++----------+----------------------+----------+
+|    0     | sim_time             |   (1,)   |
+|    1     | root_lin_vel_w       |   (3,)   |
+|    2     | root_ang_vel_w       |   (3,)   |
+|    3     | root_quat_w          |   (4,)   |
+|    4     | joint_pos            |  (19,)   |
+|    5     | joint_vel            |  (19,)   |
+|    6     | joint_effort         |  (19,)   |
++----------+----------------------+----------+
++---------------------------------------------+
+|  Active Observation Terms in Group: 'debug' |
++---------+-------------------------+---------+
+|  Index  | Name                    |  Shape  |
++---------+-------------------------+---------+
+|    0    | base_lin_vel            |   (3,)  |
+|    1    | base_ang_vel            |   (3,)  |
+|    2    | projected_gravity       |   (3,)  |
+|    3    | joint_pos_rel           |  (19,)  |
+|    4    | joint_vel_rel           |  (19,)  |
+|    5    | default_joint_pos       |  (19,)  |
+|    6    | joint_ids               |  (19,)  |
++---------+-------------------------+---------+
+
+
+Safety Limits:
+  fl_hx: [-0.707, 0.707]
+
+  fl_hy: [-0.739, 2.135]
+
+  fl_kn: [-2.793, -0.247]
+
+  fr_hx: [-0.707, 0.707]
+
+  fr_hy: [-0.739, 2.135]
+
+  fr_kn: [-2.666, -0.247]
+
+  hl_hx: [-0.707, 0.707]
+
+  hl_hy: [-0.739, 2.135]
+
+  hl_kn: [-2.666, -0.247]
+
+  hr_hx: [-0.707, 0.707]
+
+  hr_hy: [-0.739, 2.135]
+
+  hr_kn: [-2.666, -0.374]
+
+Terminal Keyboard Control Started.
+Controls:
+  Forward: w
+  Backward: s
+  Left: a
+  Right: d
+  Yaw L: q
+  Yaw R: e
+  Stop:   (Space)
+
+============================================================
+[SMOKE TEST] obs_dict keys: ['spot', 'debug']
+[SMOKE TEST] obs_dict['spot'] type: <class 'dict'>
+  'sim_time': type=Tensor, shape=torch.Size([1, 1]), values=tensor([[0.]], device='cuda:0')
+  'root_lin_vel_w': type=Tensor, shape=torch.Size([1, 3]), values=tensor([[0., 0., 0.]], device='cuda:0')
+  'root_ang_vel_w': type=Tensor, shape=torch.Size([1, 3]), values=tensor([[0., 0., 0.]], device='cuda:0')
+  'root_quat_w': type=Tensor, shape=torch.Size([1, 4]), values=tensor([[1., 0., 0., 0.]], device='cuda:0')
+  'joint_pos': type=Tensor, shape=torch.Size([1, 19]), values=tensor([[ 0.1200,  0.5000, -1.0000, -0.1200,  0.5000, -1.0000,  0.1200,  0.5000,
+         -1.0000, -0.1200,  0.5000, -1.0000,  0.0000, -0.9000,  1.8000,  0.0000,
+         -0.9000,  0.0000, -1.5400]], device='cuda:0')
+  'joint_vel': type=Tensor, shape=torch.Size([1, 19]), values=tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]],
+       device='cuda:0')
+  'joint_effort': type=Tensor, shape=torch.Size([1, 19]), values=tensor([[ -7.2000, -30.0000,  60.0000,   7.2000, -30.0000,  60.0000,  -7.2000,
+         -30.0000,  60.0000,   7.2000, -30.0000,  60.0000,   0.0000, 108.0000,
+         -90.9000,   0.0000,  30.3000,   0.0000,  15.3200]], device='cuda:0')
+============================================================
+
+
+[DIAG set_state #1] Protobuf after population:
+  input root_quat_w: [1.0, 0.0, 0.0, 0.0]
+  proto rotation: w=1.0, x=0.0, y=0.0, z=0.0
+
+[DIAG OnnxCmd #1] context.latest_state quaternion at consumption:
+  rotation: w=1.0, x=0.0, y=0.0, z=0.0
+  type(w): <class 'float'>
+  lin_vel: x=0.0, y=0.0, z=0.0
+[STEP   1] vel_cmd=[0.00,0.00,0.00] blv=[0.000,0.000,0.000] bav=[0.000,0.000,0.000] grav=[0.000, 0.000, -1.000] action=[0.136, 0.672, -1.318, -0.175, 0.617, -1.330...] jpos=[0.120, 0.500, -1.000, -0.120, 0.500, -1.000...] last=[0.120, 0.500, -1.000, -0.120, 0.500, -1.000...]
+
+[DIAG set_state #2] Protobuf after population:
+  input root_quat_w: [0.999987006187439, 0.0009833237854763865, -0.004997663665562868, 0.00010652329365257174]
+  proto rotation: w=0.999987006187439, x=0.0009833237854763865, y=-0.004997663665562868, z=0.00010652329365257174
+
+[DIAG OnnxCmd #2] context.latest_state quaternion at consumption:
+  rotation: w=0.999987006187439, x=0.0009833237854763865, y=-0.004997663665562868, z=0.00010652329365257174
+  type(w): <class 'float'>
+  lin_vel: x=0.017161833122372627, y=0.011970105580985546, z=-0.25084489583969116
+[STEP   2] vel_cmd=[0.00,0.00,0.00] blv=[0.015,0.011,-0.251] bav=[0.238,-0.660,0.016] grav=[-0.010, -0.002, -1.000] action=[0.155, 0.802, -1.529, -0.218, 0.641, -1.362...] jpos=[0.108, 0.487, -0.972, -0.114, 0.484, -0.971...] last=[0.136, 0.672, -1.318, -0.175, 0.617, -1.330...]
+
+[DIAG set_state #3] Protobuf after population:
+  input root_quat_w: [0.9999381303787231, 0.0044017573818564415, -0.010205855593085289, 0.0003953023988287896]
+  proto rotation: w=0.9999381303787231, x=0.0044017573818564415, y=-0.010205855593085289, z=0.0003953023988287896
+[STEP   3] vel_cmd=[0.00,0.00,0.00] blv=[0.078,0.017,-0.452] bav=[0.394,-0.372,0.043] grav=[-0.020, -0.009, -1.000] action=[0.157, 1.011, -1.725, -0.182, 0.648, -1.227...] jpos=[0.084, 0.588, -1.261, -0.118, 0.555, -1.208...] last=[0.155, 0.802, -1.529, -0.218, 0.641, -1.362...]
+
+[DIAG set_state #4] Protobuf after population:
+  input root_quat_w: [0.9998887777328491, 0.0075545767322182655, -0.012818804010748863, 0.0009637787006795406]
+  proto rotation: w=0.9998887777328491, x=0.0075545767322182655, y=-0.012818804010748863, z=0.0009637787006795406
+[STEP   4] vel_cmd=[0.00,0.00,0.00] blv=[0.127,0.003,-0.660] bav=[0.203,-0.204,0.059] grav=[-0.026, -0.015, -1.000] action=[0.108, 1.013, -1.814, -0.143, 0.594, -1.114...] jpos=[0.078, 0.705, -1.512, -0.145, 0.588, -1.282...] last=[0.157, 1.011, -1.725, -0.182, 0.648, -1.227...]
+
+[DIAG set_state #5] Protobuf after population:
+  input root_quat_w: [0.999867856502533, 0.007598967757076025, -0.01429995708167553, 0.0013528858544304967]
+  proto rotation: w=0.999867856502533, x=0.007598967757076025, y=-0.01429995708167553, z=0.0013528858544304967
+[STEP   5] vel_cmd=[0.00,0.00,0.00] blv=[0.131,-0.027,-0.877] bav=[-0.152,-0.155,0.095] grav=[-0.029, -0.015, -0.999] action=[0.045, 0.960, -1.660, 0.001, 0.576, -0.901...] jpos=[0.093, 0.844, -1.692, -0.172, 0.595, -1.225...] last=[0.108, 1.013, -1.814, -0.143, 0.594, -1.114...]
+
+[DIAG set_state #6] Protobuf after population:
+  input root_quat_w: [0.9998698234558105, 0.008129826746881008, -0.013839514926075935, 0.0016184340929612517]
+  proto rotation: w=0.9998698234558105, x=0.008129826746881008, y=-0.013839514926075935, z=0.0016184340929612517
+[STEP   6] vel_cmd=[0.00,0.00,0.00] blv=[0.101,-0.011,-0.969] bav=[0.234,0.126,-0.028] grav=[-0.028, -0.016, -0.999] action=[-0.122, 0.818, -1.428, 0.050, 0.516, -0.631...] jpos=[0.112, 0.953, -1.737, -0.185, 0.582, -1.097...] last=[0.045, 0.960, -1.660, 0.001, 0.576, -0.901...]2026-04-17T00:49:49Z [5,880ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </World/envs/env_0/Robot/arm_link_jaw/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/arm_link_jaw> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/arm_link_jaw/visuals> (recomposing stage on stage @anon:0x5e60f612ed90:World0.usd@ <0x5e60f6134330>)
+
+2026-04-17T00:49:49Z [5,880ms] [Warning] [omni.usd] Warning: in _ReportErrors at line 3172 of /builds/omniverse/usd-ci/USD/pxr/usd/usd/stage.cpp -- In </World/envs/env_0/Robot/hl_foot/visuals>: Unresolved reference prim path @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_physics.usd@</visuals/hl_foot> introduced by @/tmp/IsaacLab/usd_20260416_214948_2258/configuration/spot_with_arm_base.usd@</spot_with_arm/hl_foot/visuals> (recomposing stage on stage @anon:0x5e60f612ed90:World0.usd@ <0x5e60f6134330>)
+

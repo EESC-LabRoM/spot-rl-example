@@ -353,7 +353,7 @@ class OnnxCommandGenerator:
         if self.verbose:
             print("[INFO] cmd", self._context.velocity_cmd)
 
-        return {
+        inputs = {
             "base_linear_velocity": ob.get_base_linear_velocity(state)
             .astype(np.float32)
             .reshape(1, 3),
@@ -380,6 +380,15 @@ class OnnxCommandGenerator:
             .astype(np.float32)
             .reshape(1, -1),
         }
+
+        # Check if the loaded ONNX model requires height_commands or base_orientation_commands
+        session_inputs = [i.name for i in self._inference_session.get_inputs()]
+        if "height_commands" in session_inputs:
+            inputs["height_commands"] = np.array([[0.0]], dtype=np.float32)
+        if "base_orientation_commands" in session_inputs:
+            inputs["base_orientation_commands"] = np.array([[0.0, 0.0]], dtype=np.float32)
+
+        return inputs
 
     def create_proto(self, pos_command: List[float]):
         """generate a proto msg for spot with a given pos_command

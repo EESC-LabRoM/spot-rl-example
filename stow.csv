@@ -1,0 +1,2 @@
+index,pos_x,pos_y,pos_z,quat_w,quat_x,quat_y,quat_z,arm_sh0,arm_sh1,arm_el0,arm_el1,arm_wr0,arm_wr1,arm_f1x
+0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,-3.1415,3.1415,1.5655,0.0,-1.5655,0.0

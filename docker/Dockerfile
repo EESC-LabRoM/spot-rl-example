@@ -11,11 +11,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
     git curl cmake build-essential libglib2.0-0 libglu1-mesa \
-    libvulkan1 vulkan-tools pkg-config python3-pip \
+    libvulkan1 vulkan-tools pkg-config \
     libgl1 \
     libx11-6 \
-    libvulkan1 \
-    libxt6 libxrender1 libxext6 libsm6 libice6 libfontconfig1 \ 
+    libxt6 libxrender1 libxext6 libsm6 libice6 libfontconfig1 \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 python3.11-dev python3.11-venv \
     && rm -rf /var/lib/apt/lists/*
 
    
@@ -30,10 +33,11 @@ WORKDIR /workspace
 COPY pyproject.toml /workspace/pyproject.toml
 COPY uv.lock /workspace/uv.lock
 
-# Step B: Sync. This takes ~10 mins the FIRST time, 
+# Step B: Sync with Python 3.11 (isaaclab only publishes cp311 wheels).
+# This takes ~10 mins the FIRST time,
 # but will be CACHED for subsequent builds with same dependencies.
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --extra-index-url https://pypi.nvidia.com
+    uv sync --frozen --python python3.11 --extra-index-url https://pypi.nvidia.com
 
 # Set entrypoint to bash for interactive use
 ENTRYPOINT ["/bin/bash"]
