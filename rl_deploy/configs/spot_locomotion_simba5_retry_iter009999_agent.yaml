@@ -1,4 +1,4 @@
-seed: 813731
+seed: 523945
 device: cuda:0
 num_steps_per_env: 24
 max_iterations: 10000
@@ -12,7 +12,7 @@ clip_actions: null
 check_for_nan: true
 save_interval: 200
 experiment_name: spot_locomotion_simba
-run_name: simba2
+run_name: spot_locomotion_simba5_retry
 logger: wandb
 neptune_project: isaaclab
 wandb_project: myrelic
@@ -33,7 +33,7 @@ actor:
     init_std: 1.0
     std_type: scalar
   simba_hidden_dim: 256
-  simba_num_blocks: 2
+  simba_num_blocks: 8
   simba_final_gain: 0.01
   simba_depth_scale: true
 critic:
@@ -46,7 +46,7 @@ critic:
   obs_normalization: true
   distribution_cfg: null
   simba_hidden_dim: 256
-  simba_num_blocks: 2
+  simba_num_blocks: 8
   simba_final_gain: 1.0
   simba_depth_scale: true
 algorithm:
