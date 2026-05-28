@@ -4,6 +4,7 @@ import datetime
 import json
 import os
 from pathlib import Path
+import threading
 from typing import Any, Dict, List
 
 import h5py
@@ -13,9 +14,20 @@ import numpy as np
 class HDF5Logger:
     """Class to buffer and save robot states and observations to an HDF5 file."""
 
-    def __init__(self, log_path: str, metadata_path: str | os.PathLike | None = None):
+    def __init__(
+        self,
+        log_path: str,
+        metadata_path: str | os.PathLike | None = None,
+        autosave_interval_steps: int = 500,
+    ):
         self.log_path = log_path
         self._first_timestamp = None
+        self._lock = threading.RLock()
+        self._last_saved_steps = 0
+        self._save_in_progress = False
+        self._save_thread_id = None
+        self._autosave_thread = None
+        self.autosave_interval_steps = autosave_interval_steps
         self.metadata = self._load_metadata(metadata_path)
         self.data: Dict[str, List] = {
             "raw_base_linear_velocity": [],
@@ -124,86 +136,124 @@ class HDF5Logger:
         command_end_time: float | None = None,
     ):
         """Append a single step of data to the buffers."""
-        self.data["raw_base_linear_velocity"].append(raw_base_linear_velocity)
-        self.data["raw_base_angular_velocity"].append(raw_base_angular_velocity)
-        self.data["raw_projected_gravity"].append(raw_projected_gravity)
-        self.data["raw_joint_positions"].append(raw_joint_positions)
-        self.data["raw_joint_velocities"].append(raw_joint_velocities)
-        self.data["raw_joint_loads"].append(raw_joint_loads)
-        self.data["spot_current_positions"].append(spot_current_positions)
-        self.data["spot_current_velocities"].append(spot_current_velocities)
-        self.data["preprocessed_base_linear_velocity"].append(
-            preprocessed_base_linear_velocity
-        )
-        self.data["preprocessed_base_angular_velocity"].append(
-            preprocessed_base_angular_velocity
-        )
-        self.data["preprocessed_projected_gravity"].append(
-            preprocessed_projected_gravity
-        )
-        self.data["preprocessed_velocity_cmd"].append(preprocessed_velocity_cmd)
-        self.data["preprocessed_joint_positions"].append(preprocessed_joint_positions)
-        self.data["preprocessed_joint_velocities"].append(preprocessed_joint_velocities)
-        self.data["preprocessed_last_action"].append(preprocessed_last_action)
-        self.data["commanded_action"].append(commanded_action)
-        self.data["dt_divider_wait"].append(dt_divider_wait)
-        self.data["dt_divider_to_onnx"].append(dt_divider_to_onnx)
-        self.data["dt_onnx_compute"].append(dt_onnx_compute)
-        self.data["dt_post_process"].append(dt_post_process)
-        self.data["dt_total_step"].append(dt_total_step)
-        self.data["dt_state_arrival_to_compute"].append(dt_state_arrival_to_compute)
-        if self._first_timestamp is None:
-            self._first_timestamp = response_timestamp
-        delta_time = self._timestamp_to_seconds(response_timestamp) - self._timestamp_to_seconds(
-            self._first_timestamp
-        )
-        self.data["response_timestamp"].append(delta_time)
-        self.data["raw_state_proto_bytes"].append(raw_state_proto_bytes)
-        self.data["proto_bytes"].append(proto_bytes)
-        self.data["foot_contact_enum"].append(foot_contact_enum or [0, 0, 0, 0])
-        self.data["foot_contact_binary"].append(foot_contact_binary or [0, 0, 0, 0])
-        self.data["foot_contact_transition"].append(
-            foot_contact_transition or [0, 0, 0, 0]
-        )
-        self.data["imu_linear_acceleration"].append(
-            imu_linear_acceleration or [0.0, 0.0, 0.0]
-        )
-        self.data["imu_angular_velocity"].append(imu_angular_velocity or [0.0, 0.0, 0.0])
-        self.data["imu_packet_timestamp"].append(
-            np.nan if imu_packet_timestamp is None else imu_packet_timestamp
-        )
-        self.data["command_user_key"].append(
-            -1 if command_user_key is None else command_user_key
-        )
-        self.data["command_request_timestamp"].append(
-            np.nan if command_request_timestamp is None else command_request_timestamp
-        )
-        self.data["command_end_time"].append(
-            np.nan if command_end_time is None else command_end_time
-        )
+        with self._lock:
+            self.data["raw_base_linear_velocity"].append(raw_base_linear_velocity)
+            self.data["raw_base_angular_velocity"].append(raw_base_angular_velocity)
+            self.data["raw_projected_gravity"].append(raw_projected_gravity)
+            self.data["raw_joint_positions"].append(raw_joint_positions)
+            self.data["raw_joint_velocities"].append(raw_joint_velocities)
+            self.data["raw_joint_loads"].append(raw_joint_loads)
+            self.data["spot_current_positions"].append(spot_current_positions)
+            self.data["spot_current_velocities"].append(spot_current_velocities)
+            self.data["preprocessed_base_linear_velocity"].append(
+                preprocessed_base_linear_velocity
+            )
+            self.data["preprocessed_base_angular_velocity"].append(
+                preprocessed_base_angular_velocity
+            )
+            self.data["preprocessed_projected_gravity"].append(
+                preprocessed_projected_gravity
+            )
+            self.data["preprocessed_velocity_cmd"].append(preprocessed_velocity_cmd)
+            self.data["preprocessed_joint_positions"].append(preprocessed_joint_positions)
+            self.data["preprocessed_joint_velocities"].append(preprocessed_joint_velocities)
+            self.data["preprocessed_last_action"].append(preprocessed_last_action)
+            self.data["commanded_action"].append(commanded_action)
+            self.data["dt_divider_wait"].append(dt_divider_wait)
+            self.data["dt_divider_to_onnx"].append(dt_divider_to_onnx)
+            self.data["dt_onnx_compute"].append(dt_onnx_compute)
+            self.data["dt_post_process"].append(dt_post_process)
+            self.data["dt_total_step"].append(dt_total_step)
+            self.data["dt_state_arrival_to_compute"].append(dt_state_arrival_to_compute)
+            if self._first_timestamp is None:
+                self._first_timestamp = response_timestamp
+            delta_time = self._timestamp_to_seconds(
+                response_timestamp
+            ) - self._timestamp_to_seconds(self._first_timestamp)
+            self.data["response_timestamp"].append(delta_time)
+            self.data["raw_state_proto_bytes"].append(raw_state_proto_bytes)
+            self.data["proto_bytes"].append(proto_bytes)
+            self.data["foot_contact_enum"].append(foot_contact_enum or [0, 0, 0, 0])
+            self.data["foot_contact_binary"].append(foot_contact_binary or [0, 0, 0, 0])
+            self.data["foot_contact_transition"].append(
+                foot_contact_transition or [0, 0, 0, 0]
+            )
+            self.data["imu_linear_acceleration"].append(
+                imu_linear_acceleration or [0.0, 0.0, 0.0]
+            )
+            self.data["imu_angular_velocity"].append(
+                imu_angular_velocity or [0.0, 0.0, 0.0]
+            )
+            self.data["imu_packet_timestamp"].append(
+                np.nan if imu_packet_timestamp is None else imu_packet_timestamp
+            )
+            self.data["command_user_key"].append(
+                -1 if command_user_key is None else command_user_key
+            )
+            self.data["command_request_timestamp"].append(
+                np.nan if command_request_timestamp is None else command_request_timestamp
+            )
+            self.data["command_end_time"].append(
+                np.nan if command_end_time is None else command_end_time
+            )
 
-        velocity_cmd = np.array(preprocessed_velocity_cmd, dtype=np.float32).reshape(-1)
-        base_velocity = np.array(raw_base_linear_velocity, dtype=np.float32).reshape(-1)
-        self.data["tracking_error_velocity"].append(velocity_cmd[:3] - base_velocity[:3])
+            velocity_cmd = np.array(preprocessed_velocity_cmd, dtype=np.float32).reshape(
+                -1
+            )
+            base_velocity = np.array(raw_base_linear_velocity, dtype=np.float32).reshape(
+                -1
+            )
+            self.data["tracking_error_velocity"].append(
+                velocity_cmd[:3] - base_velocity[:3]
+            )
 
-        action = np.array(commanded_action, dtype=np.float32).reshape(-1)
-        joint_pos = np.array(raw_joint_positions, dtype=np.float32).reshape(-1)
-        self.data["joint_position_error"].append(action[:12] - joint_pos[:12])
+            action = np.array(commanded_action, dtype=np.float32).reshape(-1)
+            joint_pos = np.array(raw_joint_positions, dtype=np.float32).reshape(-1)
+            self.data["joint_position_error"].append(action[:12] - joint_pos[:12])
+            num_steps = len(self.data["response_timestamp"])
 
-    def save(self):
-        """Write all buffered data to the HDF5 file."""
-        if not self.log_path:
-            return
+        if (
+            self.autosave_interval_steps > 0
+            and num_steps - self._last_saved_steps >= self.autosave_interval_steps
+        ):
+            self.autosave_async()
 
-        print(f"Saving HDF5 log to {self.log_path}...")
-        os.makedirs(os.path.dirname(os.path.abspath(self.log_path)), exist_ok=True)
+    def _snapshot(self):
+        with self._lock:
+            return {key: list(value) for key, value in self.data.items()}, dict(
+                self.metadata
+            )
+
+    def is_save_in_progress(self) -> bool:
+        with self._lock:
+            return self._save_in_progress
+
+    def is_save_in_progress_on_current_thread(self) -> bool:
+        with self._lock:
+            return self._save_thread_id == threading.get_ident()
+
+    def autosave_async(self):
+        with self._lock:
+            if self._save_in_progress:
+                return
+            if self._autosave_thread is not None and self._autosave_thread.is_alive():
+                return
+
+            self._autosave_thread = threading.Thread(
+                target=self.save,
+                kwargs={"reason": "autosave"},
+                daemon=True,
+            )
+            self._autosave_thread.start()
+
+    def _write_hdf5(self, path: Path, data: Dict[str, List], metadata: Dict[str, Any]):
         # Create variable-length datatype for raw bytes arrays
         vlen_bytes_dtype = h5py.vlen_dtype(np.uint8)
-        with h5py.File(self.log_path, "w") as f:
-            for key, value in self.metadata.items():
+        with h5py.File(path, "w") as f:
+            for key, value in metadata.items():
                 f.attrs[key] = self._metadata_attr_value(value)
 
-            for key, val in self.data.items():
+            for key, val in data.items():
                 if len(val) > 0:
                     if key == "raw_state_proto_bytes" or key == "proto_bytes":
                         # Convert bytes strings into variable length numpy arrays of uint8
@@ -226,4 +276,59 @@ class HDF5Logger:
                         f.create_dataset(key, data=np.array(val, dtype=np.float64))
                     else:
                         f.create_dataset(key, data=np.array(val, dtype=np.float32))
-        print("HDF5 log saved successfully.")
+            f.flush()
+            os.fsync(f.id.get_vfd_handle())
+
+    def save(self, reason: str = "manual"):
+        """Write all buffered data to the HDF5 file."""
+        if not self.log_path:
+            return
+
+        while True:
+            with self._lock:
+                if not self._save_in_progress:
+                    self._save_in_progress = True
+                    self._save_thread_id = threading.get_ident()
+                    break
+                autosave_thread = self._autosave_thread
+
+            if reason == "autosave" or autosave_thread is threading.current_thread():
+                print(f"Skipping nested HDF5 save to {self.log_path} ({reason}).")
+                return
+
+            if autosave_thread is not None and autosave_thread.is_alive():
+                print(f"Waiting for active HDF5 save before {reason} save.")
+                autosave_thread.join()
+            else:
+                return
+
+        try:
+            data, metadata = self._snapshot()
+            num_steps = len(data["response_timestamp"])
+            if num_steps == 0:
+                print(f"No HDF5 samples to save to {self.log_path}.")
+                return
+
+            final_path = Path(self.log_path)
+            if num_steps == self._last_saved_steps and final_path.exists():
+                print(f"HDF5 log already saved to {final_path} ({num_steps} steps).")
+                return
+
+            final_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp_path = final_path.with_name(f".{final_path.name}.tmp")
+
+            print(f"Saving HDF5 log to {final_path} ({num_steps} steps, {reason})...")
+            self._write_hdf5(tmp_path, data, metadata)
+            os.replace(tmp_path, final_path)
+            dir_fd = os.open(final_path.parent, os.O_RDONLY)
+            try:
+                os.fsync(dir_fd)
+            finally:
+                os.close(dir_fd)
+
+            self._last_saved_steps = num_steps
+            print("HDF5 log saved successfully.")
+        finally:
+            with self._lock:
+                self._save_in_progress = False
+                self._save_thread_id = None

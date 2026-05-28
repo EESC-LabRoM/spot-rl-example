@@ -1,6 +1,8 @@
 # Copyright (c) 2024 Boston Dynamics AI Institute LLC. All rights reserved.
 
 import argparse
+import atexit
+import signal
 import sys
 from pathlib import Path
 
@@ -18,6 +20,39 @@ from rl_deploy.utils.event_divider import EventDivider
 from rl_deploy.utils.hdf5_logger import HDF5Logger
 
 from datetime import datetime
+
+
+def _safe_save_hdf5(logger: HDF5Logger, reason: str):
+    try:
+        logger.save(reason=reason)
+    except Exception as exc:
+        print(f"Failed to save HDF5 log during {reason}: {exc!r}")
+
+
+def _run_cleanup_step(description: str, cleanup_func):
+    print(description)
+    try:
+        cleanup_func()
+    except KeyboardInterrupt:
+        print(f"Interrupted during {description}; continuing cleanup.")
+    except Exception as exc:
+        print(f"Failed during {description}: {exc!r}")
+
+
+def _register_emergency_hdf5_saves(logger: HDF5Logger):
+    def save_on_exit():
+        _safe_save_hdf5(logger, "process exit")
+
+    def save_on_signal(signum, frame):
+        if logger.is_save_in_progress_on_current_thread():
+            print(f"HDF5 save already in progress; ignoring signal {signum}.")
+            return
+        print(f"Received signal {signum}; saving during shutdown.")
+        raise KeyboardInterrupt
+
+    atexit.register(save_on_exit)
+    signal.signal(signal.SIGINT, save_on_signal)
+    signal.signal(signal.SIGTERM, save_on_signal)
 
 
 def main():
@@ -61,6 +96,7 @@ def main():
         metadata_path = default_metadata_path if default_metadata_path.exists() else None
 
     logger = HDF5Logger(options.hdf5_log, metadata_path=metadata_path)
+    _register_emergency_hdf5_saves(logger)
     command_generator = OnnxCommandGenerator(
         context, config, policy_file, options.verbose, logger=logger
     )
@@ -91,12 +127,11 @@ def main():
         except KeyboardInterrupt:
             print("killed with ctrl-c")
         finally:
-            print("stop command stream")
-            spot.stop_command_stream()
-            print("stop state stream")
-            spot.stop_state_stream()
+            _safe_save_hdf5(logger, "before stream shutdown")
+            _run_cleanup_step("stop command stream", spot.stop_command_stream)
+            _run_cleanup_step("stop state stream", spot.stop_state_stream)
             print("stop game pad")
-            logger.save()
+            _safe_save_hdf5(logger, "after stream shutdown")
 
 
 if __name__ == "__main__":
