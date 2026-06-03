@@ -59,6 +59,9 @@ from rl_deploy.orbit.onnx_command_generator import (
 from rl_deploy.isaaclab_spot.isaac_spot import IsaacMockSpot
 from rl_deploy.isaaclab_spot.spot_env import SpotFlatEnvCfg
 
+SPOT_INIT_CLEARANCE_HEIGHT = 0.80
+SPOT_STARTUP_HOLD_STEPS = 150
+
 
 def main():
     """Main function."""
@@ -70,11 +73,13 @@ def main():
     env_cfg = SpotFlatEnvCfg()
     env_cfg.scene.num_envs = 1
     env_cfg.sim.device = args_cli.device
+    env_cfg.scene.robot.init_state.pos = (0.0, 0.0, SPOT_INIT_CLEARANCE_HEIGHT)
+    env_cfg.events.reset_robot_joints.params["position_range"] = (0.0, 0.0)
+    env_cfg.events.reset_robot_joints.params["velocity_range"] = (0.0, 0.0)
 
     # wrap for video recording
     env = ManagerBasedEnv(env_cfg)
 
-    obs, _ = env.reset()
     logger = HDF5Logger(args_cli.hdf5_log)
     context = OnnxControllerContext()
     state_handler = StateHandler(context)
@@ -89,6 +94,9 @@ def main():
     spot.start_state_stream(state_handler)
 
     obs_dict, _ = env.reset()
+    hold_actions = obs_dict["spot"]["joint_pos"].clone()
+    for _ in range(SPOT_STARTUP_HOLD_STEPS):
+        obs_dict, _ = env.step(hold_actions)
     spot.set_state(obs_dict["spot"])
     spot.start_command_stream(command_generator)
     # gamepad.start_listening()

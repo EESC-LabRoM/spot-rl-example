@@ -1,7 +1,7 @@
-seed: 523945
+seed: 42
 device: cuda:0
 num_steps_per_env: 24
-max_iterations: 10000
+max_iterations: 1000
 empirical_normalization: false
 obs_groups:
   actor:
@@ -11,14 +11,14 @@ obs_groups:
 clip_actions: null
 check_for_nan: true
 save_interval: 200
-experiment_name: spot_locomotion_simba
-run_name: spot_locomotion_simba5_retry
+experiment_name: spot_locomotion_stance_v3_simba_ft
+run_name: simba3__stance_v3_ft
 logger: wandb
 neptune_project: isaaclab
 wandb_project: myrelic
-resume: false
-load_run: .*
-load_checkpoint: model_.*.pt
+resume: true
+load_run: src_aesthetic_airvar
+load_checkpoint: model_12200.pt
 class_name: OnPolicyRunner
 actor:
   class_name: isaaclab_tasks.utils.rsl_rl.models.simba.SimbaModel
@@ -33,7 +33,7 @@ actor:
     init_std: 1.0
     std_type: scalar
   simba_hidden_dim: 256
-  simba_num_blocks: 8
+  simba_num_blocks: 4
   simba_final_gain: 0.01
   simba_depth_scale: true
 critic:
@@ -46,14 +46,14 @@ critic:
   obs_normalization: true
   distribution_cfg: null
   simba_hidden_dim: 256
-  simba_num_blocks: 8
+  simba_num_blocks: 4
   simba_final_gain: 1.0
   simba_depth_scale: true
 algorithm:
   class_name: PPO
   num_learning_epochs: 5
   num_mini_batches: 4
-  learning_rate: 0.0015
+  learning_rate: 0.0007
   schedule: adaptive
   gamma: 0.99
   lam: 0.95
