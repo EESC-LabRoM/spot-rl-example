@@ -142,6 +142,10 @@ class OnnxCommandGenerator:
         self.joints_offsets_ordered_spot = dict_to_list(
             self._config.default_joints, ORDERED_JOINT_NAMES_SPOT
         )
+        self.base_offsets_ordered_spot = dict_to_list(
+            self._config.default_joints, ORDERED_JOINT_NAMES_SPOT_BASE
+        )
+        self.action_scale = 1.0 if self._config.action_scale is None else self._config.action_scale
 
         self.arm_offsets_ordered = [0.0, -3.1415, 3.1415, 1.5655, 0.00, -1.5655, 0.0]
         # dict_to_list(
@@ -291,11 +295,11 @@ class OnnxCommandGenerator:
             t_onx_end = time.perf_counter()
 
         t_post_start = time.perf_counter()
-        action = output
+        action = self._post_process_action_to_spot(output)
         t_post_end = time.perf_counter()
 
         # generate proto message from target joint positions
-        proto = self.create_proto(action + self.arm_offsets_ordered)
+        proto = self.create_proto(action)
 
         if self.logger is not None:
             dt_onnx = t_onx_end - t_onx_start
@@ -367,7 +371,7 @@ class OnnxCommandGenerator:
 
         if self.mock:
             mocked_action = [0.0] * 12
-            return self.create_proto(mocked_action)
+            return self.create_proto(self._post_process_action_to_spot(mocked_action))
 
         return proto
 
@@ -392,6 +396,13 @@ class OnnxCommandGenerator:
             0
         ]  # add arm offsets
         return output
+
+    def _post_process_action_to_spot(self, action: List[float]) -> List[float]:
+        leg_targets = [
+            default_pos + self.action_scale * action_pos
+            for default_pos, action_pos in zip(self.base_offsets_ordered_spot, action)
+        ]
+        return leg_targets + self.arm_offsets_ordered
 
     def collect_inputs(
         self,
@@ -427,7 +438,9 @@ class OnnxCommandGenerator:
             # if joint_commands is not None
             # else ob.generate_joint_commands(state),
             # # TODO
-            "joint_positions": np.array(state.joint_states.position)
+            "joint_positions": np.array(
+                ob.get_joint_positions(state, self.joints_offsets_ordered_spot)
+            )
             .astype(np.float32)
             .reshape(1, -1),
             "joint_velocities": np.array(state.joint_states.velocity)

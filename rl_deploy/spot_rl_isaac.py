@@ -59,7 +59,7 @@ from rl_deploy.orbit.onnx_command_generator import (
 from rl_deploy.isaaclab_spot.isaac_spot import IsaacMockSpot
 from rl_deploy.isaaclab_spot.spot_env import SpotFlatEnvCfg
 
-SPOT_INIT_CLEARANCE_HEIGHT = 0.80
+SPOT_INIT_CLEARANCE_HEIGHT = 0.67
 SPOT_STARTUP_HOLD_STEPS = 150
 
 
