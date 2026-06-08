@@ -24,7 +24,7 @@ AppLauncher.add_app_launcher_args(parser)
 parser.add_argument(
     "--hdf5_log",
     type=str,
-    default="spot_isaac_sim.hdf5",
+    default="artifacts/datasets/spot_isaac_sim.hdf5",
     help="Path to save HDF5 log of observations.",
 )
 
@@ -40,14 +40,14 @@ simulation_app = app_launcher.app
 import os
 import sys
 
-# This allows for absolute imports from 'spot_mgrasping'
+# This allows for absolute imports from the repository root.
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 import torch
 from isaaclab.envs import ManagerBasedEnv
-from utils.hdf5_logger import HDF5Logger
+from rl_deploy.utils.hdf5_logger import HDF5Logger
 
 from rl_deploy.hid.terminal_keyboard import TerminalKeyboard
 from rl_deploy.orbit import orbit_configuration

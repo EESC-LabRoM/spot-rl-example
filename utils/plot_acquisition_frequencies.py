@@ -53,7 +53,10 @@ def main():
         "--hdf5_files",
         type=Path,
         nargs="+",
-        default=[Path("spot_isaac_sim.hdf5"), Path("spot_isaac_real.hdf5")],
+        default=[
+            Path("artifacts/datasets/spot_isaac_sim.hdf5"),
+            Path("artifacts/datasets/spot_isaac_real.hdf5"),
+        ],
         help="Paths to the HDF5 log files.",
     )
     args = parser.parse_args()
@@ -63,7 +66,7 @@ def main():
         print("Error: None of the specified HDF5 files exist.")
         return
 
-    out_dir = Path("logs")
+    out_dir = Path("artifacts/logs")
     out_dir.mkdir(exist_ok=True, parents=True)
 
     open_files = {}

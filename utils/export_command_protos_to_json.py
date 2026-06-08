@@ -17,7 +17,7 @@ def main():
     parser.add_argument(
         "--hdf5_file",
         type=Path,
-        default=Path("spot_isaac_real.hdf5"),
+        default=Path("artifacts/datasets/spot_isaac_real.hdf5"),
         help="Path to the HDF5 log file.",
     )
     parser.add_argument(
@@ -32,9 +32,10 @@ def main():
         print(f"Error: HDF5 file not found: {args.hdf5_file}")
         sys.exit(1)
 
-    output_path = args.output or args.hdf5_file.with_name(
+    output_path = args.output or Path("artifacts/exports") / (
         args.hdf5_file.stem + "_commands.json"
     )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with h5py.File(args.hdf5_file, "r") as f:
         if "proto_bytes" not in f:

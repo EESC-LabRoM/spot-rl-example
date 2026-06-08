@@ -2,7 +2,7 @@ import h5py
 import numpy as np
 from pathlib import Path
 from rl_deploy.spot.constants import ORDERED_JOINT_NAMES_SPOT
-hdf5_path = Path("spot_isaac_real.hdf5")
+hdf5_path = Path("artifacts/datasets/spot_isaac_real.hdf5")
 if hdf5_path.exists():
     with h5py.File(hdf5_path, "r") as f:
         print("Keys:", list(f.keys()))

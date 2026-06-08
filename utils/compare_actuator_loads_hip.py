@@ -22,7 +22,7 @@ def main():
     parser.add_argument(
         "--hdf5_file",
         type=Path,
-        default=Path("spot_isaac_real_20260414_194845.hdf5"),
+        default=Path("artifacts/datasets/spot_isaac_real_20260414_171227.hdf5"),
         help="Path to the HDF5 log file.",
     )
 
@@ -40,16 +40,12 @@ def main():
 
     from rl_deploy.spot.constants import ORDERED_JOINT_NAMES_SPOT
     from rl_deploy.isaaclab_spot.isaac_model import (
-        JOINT_PARAMETER_LOOKUP_TABLE,
-        KNEE_DAMPING,
-        KNEE_STIFFNESS,
+        HIP_DAMPING,
+        HIP_STIFFNESS,
     )
-    from rl_deploy.isaaclab_spot.spot_knee_actuator import (
-        SpotKneeActuator,
-        SpotKneeActuatorCfg,
-    )
+    from isaaclab.actuators import DelayedPDActuatorCfg, DelayedPDActuator
 
-    out_dir = Path("logs")
+    out_dir = Path("artifacts/logs")
     hdf5_path = args_cli.hdf5_file
 
     if not hdf5_path.exists():
@@ -64,47 +60,43 @@ def main():
         joint_loads = f["raw_joint_loads"][:]
         commanded_action = f["commanded_action"][:]
 
-    knee_joint_names = [
-        name for name in ORDERED_JOINT_NAMES_SPOT if name.endswith("_kn")
-    ]
-    knee_indices = [ORDERED_JOINT_NAMES_SPOT.index(name) for name in knee_joint_names]
+    hip_joint_names = [name for name in ORDERED_JOINT_NAMES_SPOT if name.endswith("hy")]
+    hip_indices = [ORDERED_JOINT_NAMES_SPOT.index(name) for name in hip_joint_names]
 
-    print(f"Found knee joints: {knee_joint_names} at indices {knee_indices}")
+    print(f"Found hip joints: {hip_joint_names} at indices {hip_indices}")
 
     num_timesteps = joint_positions.shape[0]
     device = "cpu"
 
-    cfg = SpotKneeActuatorCfg(
-        joint_names_expr=knee_joint_names,
+    cfg = DelayedPDActuatorCfg(
+        joint_names_expr=hip_joint_names,
         effort_limit=None,
-        stiffness=KNEE_STIFFNESS / 0.7,
-        damping=KNEE_DAMPING,
-        enable_torque_speed_limit=True,
-        joint_parameter_lookup=JOINT_PARAMETER_LOOKUP_TABLE,
+        stiffness=HIP_STIFFNESS,
+        damping=HIP_DAMPING,
         min_delay=0.0,
         max_delay=0.0,
     )
 
-    actuator = SpotKneeActuator(
+    actuator = DelayedPDActuator(
         cfg=cfg,
-        joint_names=knee_joint_names,
-        joint_ids=list(range(len(knee_joint_names))),
+        joint_names=hip_joint_names,
+        joint_ids=list(range(len(hip_joint_names))),
         num_envs=num_timesteps,
         device=device,
         stiffness=cfg.stiffness,
         damping=cfg.damping,
     )
 
-    knee_pos = torch.tensor(
-        joint_positions[:, knee_indices], dtype=torch.float32, device=device
+    hip_pos = torch.tensor(
+        joint_positions[:, hip_indices], dtype=torch.float32, device=device
     ).contiguous()
-    knee_vel = torch.tensor(
-        joint_velocities[:, knee_indices], dtype=torch.float32, device=device
+    hip_vel = torch.tensor(
+        joint_velocities[:, hip_indices], dtype=torch.float32, device=device
     ).contiguous()
-    knee_loads_actual = joint_loads[:, knee_indices]
+    hip_loads_actual = joint_loads[:, hip_indices]
 
     cmd_pos = torch.tensor(
-        commanded_action[:, knee_indices], dtype=torch.float32, device=device
+        commanded_action[:, hip_indices], dtype=torch.float32, device=device
     ).contiguous()
 
     control_action = ArticulationActions(
@@ -114,21 +106,21 @@ def main():
     )
 
     output_action = actuator.compute(
-        control_action=control_action, joint_pos=knee_pos, joint_vel=knee_vel
+        control_action=control_action, joint_pos=hip_pos, joint_vel=hip_vel
     )
 
-    knee_loads_predicted = output_action.joint_efforts.detach().cpu().numpy()
-    error_pos = (cmd_pos - knee_pos).cpu().numpy()
-    knee_vel = knee_vel.cpu().numpy()
+    hip_loads_predicted = output_action.joint_efforts.detach().cpu().numpy()
+    error_pos = (cmd_pos - hip_pos).cpu().numpy()
+    error_vel = hip_vel.cpu().numpy()
 
     out_dir.mkdir(exist_ok=True, parents=True)
 
     limit = min(20000, num_timesteps)
 
-    for i, joint_name in enumerate(knee_joint_names):
+    for i, joint_name in enumerate(hip_joint_names):
         fig, axes = plt.subplots(3, 1, figsize=(10, 15), sharex=True)
 
-        skip_steps = 10_000
+        skip_steps = 2_000
         max_limit = num_timesteps  # - skip_steps
         if max_limit <= skip_steps:
             max_limit = num_timesteps
@@ -141,15 +133,15 @@ def main():
         ax_load = axes[0]
         ax_load.plot(
             time_plot,
-            knee_loads_actual[valid_range, i],
+            hip_loads_actual[valid_range, i],
             label="Actual Load",
             color="blue",
             alpha=0.7,
         )
         ax_load.plot(
             time_plot,
-            knee_loads_predicted[valid_range, i],
-            label="Predicted Load",
+            hip_loads_predicted[valid_range, i],
+            label="Simulated Load",
             color="red",
             alpha=0.7,
             linestyle="--",
@@ -163,12 +155,12 @@ def main():
         ax_pos = axes[1]
         ax_pos.plot(
             time_plot,
-            knee_pos[valid_range, i],
-            label="Position",
+            hip_pos[valid_range, i],
+            label="Position ",
             color="green",
             alpha=0.7,
         )
-        ax_pos.set_title(f"Position: {joint_name}")
+        ax_pos.set_title(f"Position : {joint_name}")
         ax_pos.set_ylabel("Pose (rad)")
         ax_pos.legend()
         ax_pos.grid(True)
@@ -177,7 +169,7 @@ def main():
         ax_vel = axes[2]
         ax_vel.plot(
             time_plot,
-            knee_vel[valid_range, i],
+            error_vel[valid_range, i],
             label="Velocity Error",
             color="orange",
             alpha=0.7,
@@ -189,7 +181,7 @@ def main():
         ax_vel.grid(True)
 
         plt.tight_layout()
-        out_img = out_dir / f"actuator_load_comparison_{joint_name}.png"
+        out_img = out_dir / f"actuator_load_comparison_{joint_name[::-1]}.png"
         plt.savefig(out_img)
         plt.close(fig)
         print(f"Plot saved to {out_img}")

@@ -13,7 +13,7 @@ def main():
     parser.add_argument(
         "--hdf5_file",
         type=Path,
-        default=Path("spot_isaac_real.hdf5"),
+        default=Path("artifacts/datasets/spot_isaac_real.hdf5"),
         help="Path to HDF5 log.",
     )
     parser.add_argument(
@@ -124,7 +124,7 @@ def main():
     sim_loads = np.array(sim_loads)
     sim_commanded = np.array(sim_commanded)
 
-    out_dir = Path("logs")
+    out_dir = Path("artifacts/logs")
     out_dir.mkdir(exist_ok=True, parents=True)
 
     # Plot Base Linear Velocity comparisons

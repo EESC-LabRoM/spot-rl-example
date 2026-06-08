@@ -83,10 +83,13 @@ def main():
         "--files",
         type=Path,
         nargs="+",
-        default=[Path("spot_isaac_real_v2.hdf5"), Path("spot_isaac_sim_v2.hdf5")],
+        default=[
+            Path("artifacts/datasets/spot_isaac_real_v2.hdf5"),
+            Path("artifacts/datasets/spot_isaac_sim_v2.hdf5"),
+        ],
         help="Path to the HDF5 files.",
     )
-    parser.add_argument("--out_dir", type=Path, default=Path("plots"), help="Directory to save plots.")
+    parser.add_argument("--out_dir", type=Path, default=Path("artifacts/logs/plots"), help="Directory to save plots.")
     args = parser.parse_args()
 
     valid_files = [f for f in args.files if f.exists()]

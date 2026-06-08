@@ -524,7 +524,7 @@ class SpotEventCfg:
         params={
             "position_range": (-0.2, 0.2),
             "velocity_range": (-2.5, 2.5),
-            "csv_path": "stow.csv",
+            "csv_path": "artifacts/runtime/stow.csv",
             "arm_joint_names": ORDERED_JOINT_NAMES_SPOT_ARM,
             "base_joint_names": ORDERED_JOINT_NAMES_SPOT_BASE,
             "asset_cfg": SceneEntityCfg("robot"),
@@ -626,7 +626,7 @@ class ActionStateRecorderManagerCfg(RecorderManagerBaseCfg):
         PreStepFlatPolicyObservationsRecorderCfg()
     )
     record_post_step_processed_actions = PostStepProcessedActionsRecorderCfg()
-    dataset_export_dir_path: str = "datasets"
+    dataset_export_dir_path: str = "artifacts/datasets"
     dataset_filename: str = (
         f"isaac_spot_dataset_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
     )

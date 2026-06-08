@@ -8,7 +8,9 @@ rosbag*
 *.onnx
 
 myrelic_checkpoints/
-policies_v*/
 external/
-logs/
 models/
+.claude/logs/
+artifacts/datasets/
+artifacts/logs/
+artifacts/policies/

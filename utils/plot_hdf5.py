@@ -165,13 +165,16 @@ def main():
         "--hdf5_files",
         type=Path,
         nargs="+",
-        default=[Path("spot_isaac_sim.hdf5"), Path("spot_isaac_real.hdf5")],
+        default=[
+            Path("artifacts/datasets/spot_isaac_sim.hdf5"),
+            Path("artifacts/datasets/spot_isaac_real.hdf5"),
+        ],
         help="Paths to the HDF5 log files.",
     )
     parser.add_argument(
         "--policy_file_path",
         type=Path,
-        default=Path(__file__).parent / "configs",
+        default=Path(__file__).resolve().parents[1] / "rl_deploy" / "configs",
         help="Path to the policy directory.",
     )
     args = parser.parse_args()
@@ -192,7 +195,7 @@ def main():
         print("Error: None of the specified HDF5 files exist.")
         return
 
-    out_dir = Path("logs")
+    out_dir = Path("artifacts/logs")
     out_dir.mkdir(exist_ok=True, parents=True)
 
     # Collect all unique keys

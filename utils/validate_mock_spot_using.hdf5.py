@@ -205,5 +205,5 @@ class PipelineValidator:
 
 if __name__ == "__main__":
     # Replace with your actual HDF5 dataset filename
-    validator = PipelineValidator("datasets/flat_box_dataset_2026-04-14_15-51-45.hdf5")
+    validator = PipelineValidator("artifacts/datasets/flat_box_dataset_2026-04-14_15-51-45.hdf5")
     validator.validate()

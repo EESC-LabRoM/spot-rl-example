@@ -731,7 +731,7 @@ class ActionStateRecorderManagerCfg(RecorderManagerBaseCfg):
         PreStepFlatPolicyObservationsRecorderCfg()
     )
     record_post_step_processed_actions = PostStepProcessedActionsRecorderCfg()
-    dataset_export_dir_path: str = "datasets"
+    dataset_export_dir_path: str = "artifacts/datasets"
     dataset_filename: str = (
         f"isaac_spot_dataset_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
     )
@@ -1564,6 +1564,4 @@ class SpotInterlimbEnvCfg_Phase_1(InterlimbEnvCfg):
             [0.0, -3.1415, 3.1415, 1.5655, 0.00, 0.0, 0.0],
             [0.0, -3.1415, 3.1415, 1.5655, 0.00, 0.0, 0.0],
         )
-        self.commands.arm_leg_joint_base_pose.command_which_leg = -1 
-        
-        
+        self.commands.arm_leg_joint_base_pose.command_which_leg = -1

@@ -2,17 +2,17 @@ import sys
 import os
 import random
 import h5py
+from pathlib import Path
 
 # Add the project root to the path so we can import from rl_deploy and bosdyn if needed
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from bosdyn.api.robot_state_pb2 import RobotStateStreamResponse
 
 def main():
-    # Path to spot_isaac_real.hdf5 in the root of the project
-    hdf5_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../spot_isaac_real.hdf5'))
+    hdf5_path = Path("artifacts/datasets/spot_isaac_real.hdf5")
     
-    if not os.path.exists(hdf5_path):
+    if not hdf5_path.exists():
         print(f"Error: Could not find HDF5 file at {hdf5_path}")
         sys.exit(1)
 
@@ -45,9 +45,10 @@ def main():
         
         # Convert to JSON and save to file
         json_str = MessageToJson(parsed_state)
-        json_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../robot_state.json'))
+        json_path = Path("artifacts/exports/robot_state.json")
+        json_path.parent.mkdir(parents=True, exist_ok=True)
         
-        with open(json_path, 'w') as json_file:
+        with json_path.open('w') as json_file:
             json_file.write(json_str)
             
         print(f"Robot state for timestep {random_idx} saved to {json_path}")

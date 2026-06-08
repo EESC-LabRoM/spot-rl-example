@@ -369,7 +369,10 @@ def main() -> None:
         "--hdf5_files",
         type=Path,
         nargs="+",
-        default=[Path("spot_isaac_sim.hdf5"), Path("spot_isaac_real.hdf5")],
+        default=[
+            Path("artifacts/datasets/spot_isaac_sim.hdf5"),
+            Path("artifacts/datasets/spot_isaac_real.hdf5"),
+        ],
         help="Paths to the HDF5 log files.",
     )
     args = parser.parse_args()

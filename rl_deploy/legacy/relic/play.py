@@ -67,7 +67,7 @@ from tqdm import tqdm
 import onnxruntime as ort
 
 
-from rl_deploy.relic.interlimb_env_cfg import SpotInterlimbEnvCfg_Phase_1
+from rl_deploy.legacy.relic.interlimb_env_cfg import SpotInterlimbEnvCfg_Phase_1
 ##
 # Register Gym environments.
 ##
@@ -108,7 +108,7 @@ def main():
     # wrap for video recording
     if args_cli.video:
         video_kwargs = {
-            "video_folder": os.path.join("logs", "videos", "play"),
+            "video_folder": os.path.join("artifacts", "logs", "videos", "play"),
             "step_trigger": lambda step: step == 0,
             "video_length": args_cli.video_length,
             "disable_logger": True,

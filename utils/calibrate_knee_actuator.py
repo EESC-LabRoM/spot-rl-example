@@ -37,7 +37,7 @@ def _parse_args():
                         help="Initial sim steps to discard before scoring.")
     parser.add_argument("--sigma", type=float, default=0.2,
                         help="CMA-ES initial sigma as fraction of |theta0|.")
-    parser.add_argument("--out_dir", type=Path, default=Path("logs"))
+    parser.add_argument("--out_dir", type=Path, default=Path("artifacts/logs"))
 
     # Gain-override knobs: let the user A/B sim PID gains against real-robot
     # K_Q_P / K_QD_P without editing isaac_model.py. If the knee torque match

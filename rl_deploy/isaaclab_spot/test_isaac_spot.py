@@ -39,7 +39,7 @@ def main():
     spot = IsaacMockSpot()
     spot.start_state_stream(state_handler)
     # Read hdf5 file
-    dataset = h5py.File("datasets/isaac_spot_dataset_2026-03-18_10-32-46.hdf5", "r")
+    dataset = h5py.File("artifacts/datasets/isaac_spot_dataset_2026-03-18_10-32-46.hdf5", "r")
 
     demo_0_obs = dataset["data"]["demo_0"]["obs"]["spot"]
     demo_0_policy = dataset["data"]["demo_0"]["obs"]["policy"]

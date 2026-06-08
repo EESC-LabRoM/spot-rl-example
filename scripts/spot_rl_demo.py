@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 import bosdyn.client.util
-import orbit.orbit_configuration
+from rl_deploy.orbit import orbit_configuration
 from rl_deploy.hid.terminal_keyboard import TerminalKeyboard
 from rl_deploy.orbit.onnx_command_generator import (
     OnnxCommandGenerator,
@@ -62,14 +62,17 @@ def main():
     parser.add_argument(
         "-policy_file_path",
         type=Path,
-        default=Path(__file__).parent / "configs",
+        default=Path(__file__).resolve().parents[1] / "rl_deploy" / "configs",
         help="Path to the policy file or directory containing the policy file.",
     )
     parser.add_argument("-m", "--mock", action="store_true")
     parser.add_argument(
         "--hdf5_log",
         type=str,
-        default=f"spot_isaac_real_{datetime.now().strftime('%Y%m%d_%H%M%S')}.hdf5",
+        default=str(
+            Path("artifacts/datasets")
+            / f"spot_isaac_real_{datetime.now().strftime('%Y%m%d_%H%M%S')}.hdf5"
+        ),
         help="Path to save HDF5 log of observations.",
     )
     parser.add_argument(
@@ -80,10 +83,10 @@ def main():
     )
     options = parser.parse_args()
 
-    env_config = orbit.orbit_configuration.detect_config_file(options.policy_file_path)
-    policy_file = orbit.orbit_configuration.detect_policy_file(options.policy_file_path)
+    env_config = orbit_configuration.detect_config_file(options.policy_file_path)
+    policy_file = orbit_configuration.detect_policy_file(options.policy_file_path)
 
-    config = orbit.orbit_configuration.load_configuration(env_config)
+    config = orbit_configuration.load_configuration(env_config)
     print("Loaded configs: ", config)
 
     context = OnnxControllerContext()
