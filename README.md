@@ -6,6 +6,22 @@ docker exec -it docker-isaaclab-1 bash
 # Spot-RL
 Code & Dockerfile for Spot Reinforcement Learning demo
 
+## Deploy a faster policy
+
+Copy the `policy.onnx` produced by faster into `rl_deploy/configs` and keep exactly one ONNX file
+there. The same file is used by `spot_rl_isaac.py` and `spot_rl_demo.py`. Recurrent MinGRU state is
+detected from the ONNX inputs and carried between control steps automatically.
+
+The loader also recognizes the older flat `obs` policies: 65-value locomotion policies and
+84-value command-conditioned policies are packed using their training layouts, and their normalized
+actions are scaled and shifted into absolute Spot joint targets.
+
+Keep the existing `env.yaml`: deployment reads its joint defaults, gains, standing height, and
+action scale. For Relic Plus 69-value foot-trajectory policies, `env.yaml` also supplies the gait
+clock parameters (`policy_gait_frequency`, `policy_foot_height_max`,
+`policy_gait_swing_fraction`, and `policy_gait_phase_offsets`). `agent.yaml` is training metadata
+and is not read by the deployment pipeline.
+
 
 # Example of mocked
 ```bash

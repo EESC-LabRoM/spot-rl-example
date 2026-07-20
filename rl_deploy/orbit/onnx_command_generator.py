@@ -91,6 +91,10 @@ JOINTS_ORDER_RELIC = [
     "hr_kn",
 ]
 
+# Relic Plus samples this command uniformly in [0.5, 0.7] during training.
+# A zero here is out-of-distribution and changes the policy's leg targets.
+DEFAULT_HEIGHT_COMMAND = 0.6
+
 
 def extract_shift_from_onnx(onnx_file_path):
     # 1. Load the ONNX model graph
@@ -133,7 +137,17 @@ class OnnxCommandGenerator:
         self.logger = logger
         self.mock = mock
         self._inference_session = ort.InferenceSession(policy_file_name)
-        self._last_action = [0] * 12  # extract_shift_from_onnx(policy_file_name)[:12]
+        self._session_input_names = {
+            item.name for item in self._inference_session.get_inputs()
+        }
+        self._session_output_names_in_order = [
+            item.name for item in self._inference_session.get_outputs()
+        ]
+        self._session_output_names = set(self._session_output_names_in_order)
+        self._flat_obs_size = self._detect_flat_obs_size()
+        self._hidden_state_shape = self._detect_hidden_state_shape()
+        self._hidden_state = None
+        self._gait_phase = 0.0
         self._count = 1
         self._init_pos = None
         self._init_load = None
@@ -141,6 +155,10 @@ class OnnxCommandGenerator:
 
         self.joints_offsets_ordered_spot = dict_to_list(
             self._config.default_joints, ORDERED_JOINT_NAMES_SPOT
+        )
+        self.base_offsets_ordered_spot = self.joints_offsets_ordered_spot[:12]
+        self.action_scale = (
+            1.0 if self._config.action_scale is None else self._config.action_scale
         )
 
         self.arm_offsets_ordered = [0.0, -3.1415, 3.1415, 1.5655, 0.00, -1.5655, 0.0]
@@ -153,6 +171,71 @@ class OnnxCommandGenerator:
         self._last_contact_binary = None
 
         self._safe_limits = self._generate_safe_limits()
+        self.reset_policy_state()
+
+    def _detect_flat_obs_size(self):
+        if "obs" not in self._session_input_names:
+            return None
+        if self._session_input_names != {"obs"}:
+            raise ValueError("Flat ONNX policies must expose only the 'obs' input")
+        obs_input = self._inference_session.get_inputs()[0]
+        size = obs_input.shape[-1]
+        if size not in (65, 84):
+            raise ValueError(f"Unsupported flat ONNX observation width: {size}")
+        return size
+
+    def _detect_hidden_state_shape(self):
+        if "hidden_state" not in self._session_input_names:
+            return None
+        required_outputs = {"actions_output", "next_hidden_state"}
+        missing = required_outputs - self._session_output_names
+        if missing:
+            raise ValueError(
+                f"Recurrent ONNX is missing required outputs: {sorted(missing)}"
+            )
+        hidden_input = next(
+            item
+            for item in self._inference_session.get_inputs()
+            if item.name == "hidden_state"
+        )
+        shape = hidden_input.shape
+        if (
+            len(shape) != 3
+            or not isinstance(shape[0], int)
+            or not isinstance(shape[2], int)
+            or (isinstance(shape[1], int) and shape[1] != 1)
+        ):
+            raise ValueError(
+                "hidden_state must have shape [num_layers, batch, hidden_size] "
+                f"with deployment batch 1; got {shape}"
+            )
+        return shape[0], 1, shape[2]
+
+    def reset_policy_state(self):
+        self._gait_phase = 0.0
+        self._hidden_state = (
+            None
+            if self._hidden_state_shape is None
+            else np.zeros(self._hidden_state_shape, dtype=np.float32)
+        )
+        if self._flat_obs_size is not None:
+            self._last_action = [0.0] * 12
+            return
+        self._last_action = list(self.base_offsets_ordered_spot)
+
+    def _foot_height_commands(self, config):
+        swing_fraction = float(config.gait_swing_fraction)
+        phase_offsets = np.asarray(config.gait_phase_offsets, dtype=np.float32)
+        theta = (self._gait_phase - phase_offsets) % 1.0
+        swing = theta < swing_fraction
+        height = np.sin(np.pi * theta / swing_fraction)
+        command = float(config.foot_height_max) * np.where(swing, height, 0.0)
+        return command.astype(np.float32).reshape(1, 4)
+
+    def _advance_gait_phase(self, config):
+        self._gait_phase = (
+            self._gait_phase + float(config.gait_frequency) * 0.02
+        ) % 1.0
 
     def _timestamp_to_seconds(self, timestamp) -> float:
         return float(timestamp.seconds) + float(timestamp.nanos) * 1e-9
@@ -282,7 +365,11 @@ class OnnxCommandGenerator:
 
         if self.mock:
             # Action of zeros results in default joint values after post-processing
-            mocked_action = [0.0] * 12
+            mocked_action = (
+                [0.0] * 12
+                if self._flat_obs_size is not None
+                else list(self.base_offsets_ordered_spot)
+            )
             output = mocked_action
             t_onx_start = t_onx_end = time.perf_counter()
         else:
@@ -291,11 +378,11 @@ class OnnxCommandGenerator:
             t_onx_end = time.perf_counter()
 
         t_post_start = time.perf_counter()
-        action = output
+        action = self._deployment_action(output)
         t_post_end = time.perf_counter()
 
         # generate proto message from target joint positions
-        proto = self.create_proto(action + self.arm_offsets_ordered)
+        proto = self.create_proto(action)
 
         if self.logger is not None:
             dt_onnx = t_onx_end - t_onx_start
@@ -329,13 +416,13 @@ class OnnxCommandGenerator:
                 response_timestamp=ob.get_response_timestamp(raw_state),
                 spot_current_positions=list(raw_state.joint_states.position),
                 spot_current_velocities=list(raw_state.joint_states.velocity),
-                preprocessed_base_linear_velocity=inputs_dict["base_linear_velocity"],
-                preprocessed_base_angular_velocity=inputs_dict["base_angular_velocity"],
-                preprocessed_projected_gravity=inputs_dict["projected_gravity"],
-                preprocessed_velocity_cmd=inputs_dict["velocity_commands"],
-                preprocessed_joint_positions=inputs_dict["joint_positions"],
-                preprocessed_joint_velocities=inputs_dict["joint_velocities"],
-                preprocessed_last_action=inputs_dict["last_actions"],
+                preprocessed_base_linear_velocity=self._observation_terms["base_linear_velocity"],
+                preprocessed_base_angular_velocity=self._observation_terms["base_angular_velocity"],
+                preprocessed_projected_gravity=self._observation_terms["projected_gravity"],
+                preprocessed_velocity_cmd=self._observation_terms["velocity_commands"],
+                preprocessed_joint_positions=self._observation_terms["joint_positions"],
+                preprocessed_joint_velocities=self._observation_terms["joint_velocities"],
+                preprocessed_last_action=self._observation_terms["last_actions"],
                 commanded_action=action,
                 dt_divider_wait=dt_divider_wait,
                 dt_divider_to_onnx=dt_divider_to_onnx,
@@ -362,12 +449,13 @@ class OnnxCommandGenerator:
 
         # cache data for history and logging
         self._last_action = output
+        if "foot_height_commands" in self._session_input_names:
+            self._advance_gait_phase(self._config)
         self._count += 1
         self._context.count += 1
 
         if self.mock:
-            mocked_action = [0.0] * 12
-            return self.create_proto(mocked_action)
+            return proto
 
         return proto
 
@@ -388,10 +476,23 @@ class OnnxCommandGenerator:
 
     def _compute_action(self, input_dict: dict[str, float]):
         # execute model from onnx file
-        output = self._inference_session.run(None, input_dict)[0].tolist()[
-            0
-        ]  # add arm offsets
-        return output
+        if self._hidden_state_shape is None:
+            return self._inference_session.run(None, input_dict)[0].tolist()[0]
+        recurrent_inputs = dict(input_dict)
+        recurrent_inputs["hidden_state"] = self._hidden_state
+        values = self._inference_session.run(None, recurrent_inputs)
+        outputs = dict(zip(self._session_output_names_in_order, values))
+        self._hidden_state = outputs["next_hidden_state"]
+        return outputs["actions_output"].tolist()[0]
+
+    def _deployment_action(self, output):
+        if self._flat_obs_size is None:
+            return list(output) + self.arm_offsets_ordered
+        legs = [
+            default + self.action_scale * residual
+            for default, residual in zip(self.base_offsets_ordered_spot, output)
+        ]
+        return legs + self.arm_offsets_ordered
 
     def collect_inputs(
         self,
@@ -410,6 +511,8 @@ class OnnxCommandGenerator:
         if self.verbose:
             print("[INFO] cmd", self._context.velocity_cmd)
 
+        absolute_joint_positions = np.array(state.joint_states.position, dtype=np.float32).reshape(1, -1)
+        joint_velocities = np.array(state.joint_states.velocity, dtype=np.float32).reshape(1, -1)
         inputs = {
             "base_linear_velocity": ob.get_base_linear_velocity(state)
             .astype(np.float32)
@@ -423,28 +526,58 @@ class OnnxCommandGenerator:
             "velocity_commands": np.array(self._context.velocity_cmd)
             .astype(np.float32)
             .reshape(1, 3),
-            # "joint_commands": joint_commands
-            # if joint_commands is not None
-            # else ob.generate_joint_commands(state),
-            # # TODO
-            "joint_positions": np.array(state.joint_states.position)
-            .astype(np.float32)
-            .reshape(1, -1),
-            "joint_velocities": np.array(state.joint_states.velocity)
-            .astype(np.float32)
-            .reshape(1, -1),
+            "joint_positions": absolute_joint_positions,
+            "joint_velocities": joint_velocities,
             "last_actions": np.array(self._last_action)
             .astype(np.float32)
             .reshape(1, -1),
         }
 
-        # Check if the loaded ONNX model requires height_commands or base_orientation_commands
-        session_inputs = [i.name for i in self._inference_session.get_inputs()]
-        if "height_commands" in session_inputs:
-            inputs["height_commands"] = np.array([[0.0]], dtype=np.float32)
-        if "base_orientation_commands" in session_inputs:
-            inputs["base_orientation_commands"] = np.array([[0.0, 0.0]], dtype=np.float32)
+        # The deployment config may opt into a different fixed policy command;
+        # old OrbitConfig instances remain compatible through the fallback.
+        height_command = float(
+            getattr(config, "height_command", DEFAULT_HEIGHT_COMMAND)
+        )
 
+        if self._flat_obs_size is not None:
+            inputs["joint_positions"] = absolute_joint_positions - np.array(
+                self.joints_offsets_ordered_spot, dtype=np.float32
+            )
+            parts = [
+                inputs["base_linear_velocity"],
+                inputs["base_angular_velocity"],
+                inputs["projected_gravity"],
+                inputs["velocity_commands"],
+            ]
+            if self._flat_obs_size == 84:
+                commands = (
+                    ob.generate_joint_commands(state)
+                    if joint_commands is None
+                    else joint_commands
+                )
+                parts.append(np.array(commands, dtype=np.float32).reshape(1, 22))
+            parts.extend(
+                [inputs["joint_positions"], inputs["joint_velocities"], inputs["last_actions"]]
+            )
+            if self._flat_obs_size == 65:
+                parts.extend(
+                    [
+                        np.full((1, 1), height_command, dtype=np.float32),
+                        np.zeros((1, 2), dtype=np.float32),
+                    ]
+                )
+            self._observation_terms = inputs
+            return {"obs": np.concatenate(parts, axis=1)}
+
+        # Check if the loaded ONNX model requires height_commands or base_orientation_commands
+        if "height_commands" in self._session_input_names:
+            inputs["height_commands"] = np.array([[height_command]], dtype=np.float32)
+        if "base_orientation_commands" in self._session_input_names:
+            inputs["base_orientation_commands"] = np.array([[0.0, 0.0]], dtype=np.float32)
+        if "foot_height_commands" in self._session_input_names:
+            inputs["foot_height_commands"] = self._foot_height_commands(config)
+
+        self._observation_terms = inputs
         return inputs
 
     def create_proto(self, pos_command: List[float]):

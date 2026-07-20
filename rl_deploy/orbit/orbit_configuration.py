@@ -4,7 +4,7 @@ from rl_deploy.orbit.orbit_constants import ORDERED_JOINT_NAMES_ARM_ISAAC
 import json
 import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 import yaml
@@ -54,6 +54,16 @@ class OrbitConfig:
     default_joints: List[float]
     standing_height: float
     action_scale: float
+    # Relic Plus policies trained with the 65-D observation schema expect a
+    # height command in the [0.5, 0.7] training range.  Keep the deployment
+    # default explicit and configurable without changing older env.yaml files.
+    height_command: float = 0.6
+    gait_frequency: float = 1.5
+    foot_height_max: float = 0.15
+    gait_swing_fraction: float = 0.25
+    gait_phase_offsets: List[float] = field(
+        default_factory=lambda: [0.0, 0.5, 0.75, 0.25]
+    )
 
 
 def detect_config_file(directory: os.PathLike | str) -> dict | None:
@@ -122,6 +132,16 @@ def load_configuration(env_config: dict) -> OrbitConfig:
 
     action_scale = env_config["actions"]["joint_pos"]["scale"]
     standing_height = env_config["scene"]["robot"]["init_state"]["pos"][2]
+    height_command = float(env_config.get("policy_height_command", 0.6))
+    gait_frequency = float(env_config.get("policy_gait_frequency", 1.5))
+    foot_height_max = float(env_config.get("policy_foot_height_max", 0.15))
+    gait_swing_fraction = float(env_config.get("policy_gait_swing_fraction", 0.25))
+    gait_phase_offsets = [
+        float(value)
+        for value in env_config.get(
+            "policy_gait_phase_offsets", [0.0, 0.5, 0.75, 0.25]
+        )
+    ]
 
     # Override the arm with default values for kp, kd
     for joint_name in ORDERED_JOINT_NAMES_ARM_ISAAC:
@@ -137,4 +157,9 @@ def load_configuration(env_config: dict) -> OrbitConfig:
         default_joints=joint_offsets,
         standing_height=standing_height,
         action_scale=action_scale,
+        height_command=height_command,
+        gait_frequency=gait_frequency,
+        foot_height_max=foot_height_max,
+        gait_swing_fraction=gait_swing_fraction,
+        gait_phase_offsets=gait_phase_offsets,
     )
