@@ -144,6 +144,13 @@ class OnnxCommandGenerator:
             item.name for item in self._inference_session.get_outputs()
         ]
         self._session_output_names = set(self._session_output_names_in_order)
+        expected_inputs = set(getattr(config, "policy_inputs", []))
+        if expected_inputs and expected_inputs != self._session_input_names:
+            raise ValueError(
+                "ONNX inputs do not match policy.yaml: "
+                f"model={sorted(self._session_input_names)}, "
+                f"manifest={sorted(expected_inputs)}"
+            )
         self._flat_obs_size = self._detect_flat_obs_size()
         self._hidden_state_shape = self._detect_hidden_state_shape()
         self._hidden_state = None
@@ -224,6 +231,10 @@ class OnnxCommandGenerator:
         self._last_action = list(self.base_offsets_ordered_spot)
 
     def _foot_height_commands(self, config):
+        if np.linalg.norm(self._context.velocity_cmd) < float(
+            config.standing_velocity_threshold
+        ):
+            return np.zeros((1, 4), dtype=np.float32)
         swing_fraction = float(config.gait_swing_fraction)
         phase_offsets = np.asarray(config.gait_phase_offsets, dtype=np.float32)
         theta = (self._gait_phase - phase_offsets) % 1.0
@@ -234,7 +245,8 @@ class OnnxCommandGenerator:
 
     def _advance_gait_phase(self, config):
         self._gait_phase = (
-            self._gait_phase + float(config.gait_frequency) * 0.02
+            self._gait_phase
+            + float(config.gait_frequency) * float(config.control_period_s)
         ) % 1.0
 
     def _timestamp_to_seconds(self, timestamp) -> float:
@@ -573,7 +585,9 @@ class OnnxCommandGenerator:
         if "height_commands" in self._session_input_names:
             inputs["height_commands"] = np.array([[height_command]], dtype=np.float32)
         if "base_orientation_commands" in self._session_input_names:
-            inputs["base_orientation_commands"] = np.array([[0.0, 0.0]], dtype=np.float32)
+            inputs["base_orientation_commands"] = np.array(
+                [config.orientation_command], dtype=np.float32
+            )
         if "foot_height_commands" in self._session_input_names:
             inputs["foot_height_commands"] = self._foot_height_commands(config)
 

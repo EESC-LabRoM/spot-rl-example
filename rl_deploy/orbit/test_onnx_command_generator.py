@@ -212,6 +212,7 @@ class OnnxCommandGeneratorTest(unittest.TestCase):
         self.assertEqual(inputs["foot_height_commands"].shape, (1, 4))
         np.testing.assert_allclose(inputs["foot_height_commands"], np.zeros((1, 4)))
 
+        context.velocity_cmd = [0.5, 0.0, 0.0]
         generator._gait_phase = 0.125
         inputs = generator.collect_inputs(context.latest_state, generator._config)
         np.testing.assert_allclose(
@@ -222,6 +223,21 @@ class OnnxCommandGeneratorTest(unittest.TestCase):
         self.assertAlmostEqual(generator._gait_phase, 0.155)
         generator.reset_policy_state()
         self.assertEqual(generator._gait_phase, 0.0)
+
+    def test_gait_command_is_suppressed_below_standing_threshold(self):
+        session = _Session(recurrent=False, named=True, foot_height=True)
+        context = OnnxControllerContext()
+        context.latest_state = _state()
+        with patch(
+            "rl_deploy.orbit.onnx_command_generator.ort.InferenceSession",
+            return_value=session,
+        ):
+            generator = OnnxCommandGenerator(context, _config(), "policy.onnx", False)
+
+        generator._gait_phase = 0.125
+        context.velocity_cmd = [0.049, 0.0, 0.0]
+        inputs = generator.collect_inputs(context.latest_state, generator._config)
+        np.testing.assert_allclose(inputs["foot_height_commands"], np.zeros((1, 4)))
 
     def test_recurrent_policy_requires_named_outputs(self):
         session = _Session(missing_output=True)

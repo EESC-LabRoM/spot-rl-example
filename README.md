@@ -8,18 +8,33 @@ Code & Dockerfile for Spot Reinforcement Learning demo
 
 ## Deploy a faster policy
 
-Copy the `policy.onnx` produced by faster into `rl_deploy/configs` and keep exactly one ONNX file
-there. The same file is used by `spot_rl_isaac.py` and `spot_rl_demo.py`. Recurrent MinGRU state is
-detected from the ONNX inputs and carried between control steps automatically.
+Faster exports a deployment bundle containing exactly one ONNX model and its versioned
+`policy.yaml` runtime contract. Point either deployment entry point at that directory; do not copy
+policy commands into this repository's `env.yaml`.
+
+```bash
+# Portable/default flow: first place the matching ONNX + policy.yaml in rl_deploy/configs.
+uv run rl_deploy/spot_rl_isaac.py
+uv run rl_deploy/spot_rl_demo.py ROBOT_IP
+
+# Or use an external bundle directly.
+uv run rl_deploy/spot_rl_isaac.py --policy-dir /path/to/run/exported
+uv run rl_deploy/spot_rl_demo.py ROBOT_IP --policy-dir /path/to/run/exported
+```
+
+Recurrent MinGRU state is detected from the ONNX inputs and carried between control steps
+automatically.
+
+See `rl_deploy/configs/README.md` for the exact portable bundle layout. The Faster W&B model
+artifact contains both required policy files.
 
 The loader also recognizes the older flat `obs` policies: 65-value locomotion policies and
 84-value command-conditioned policies are packed using their training layouts, and their normalized
 actions are scaled and shifted into absolute Spot joint targets.
 
-Keep the existing `env.yaml`: deployment reads its joint defaults, gains, standing height, and
-action scale. For Relic Plus 69-value foot-trajectory policies, `env.yaml` also supplies the gait
-clock parameters (`policy_gait_frequency`, `policy_foot_height_max`,
-`policy_gait_swing_fraction`, and `policy_gait_phase_offsets`). `agent.yaml` is training metadata
+Keep the existing `env.yaml`: it owns Spot-specific joint defaults, gains, standing height, action
+scale, and simulator setup. The policy bundle owns observation commands, gait clock parameters,
+action semantics, control timing, and recurrent reset behavior. `agent.yaml` is training metadata
 and is not read by the deployment pipeline.
 
 

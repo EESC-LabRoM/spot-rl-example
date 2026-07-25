@@ -1,4 +1,12 @@
 import argparse
+import os
+import sys
+from pathlib import Path
+
+# Make the repository package importable when this file is launched directly.
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from isaaclab.app import AppLauncher
 
@@ -17,6 +25,12 @@ parser.add_argument(
     help="Length of the recorded video (in steps).",
 )
 parser.add_argument("--task", type=str, default=None, help="Name of the task.")
+configs_dir = Path(__file__).resolve().parent / "configs"
+
+# Importable before Isaac Sim starts; keeps this CLI identical to spot_rl_demo.py.
+from rl_deploy.orbit import orbit_configuration
+
+orbit_configuration.add_policy_bundle_argument(parser, configs_dir)
 
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
@@ -37,20 +51,11 @@ app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
 """Rest everything follows."""
-import os
-import sys
-
-# This allows for absolute imports from 'spot_mgrasping'
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 import torch
 from isaaclab.envs import ManagerBasedEnv
 from utils.hdf5_logger import HDF5Logger
 
 from rl_deploy.hid.terminal_keyboard import TerminalKeyboard
-from rl_deploy.orbit import orbit_configuration
 from rl_deploy.orbit.onnx_command_generator import (
     OnnxCommandGenerator,
     OnnxControllerContext,
@@ -62,10 +67,9 @@ from rl_deploy.isaaclab_spot.spot_env import SpotFlatEnvCfg
 
 def main():
     """Main function."""
-    export_model_dir = "rl_deploy/configs"
-    env_config = orbit_configuration.detect_config_file(export_model_dir)
-    policy_file = orbit_configuration.detect_policy_file(export_model_dir)
-    config = orbit_configuration.load_configuration(env_config)
+    bundle = orbit_configuration.resolve_policy_bundle(
+        args_cli.policy_dir, configs_dir
+    )
 
     env_cfg = SpotFlatEnvCfg()
     env_cfg.scene.num_envs = 1
@@ -79,7 +83,7 @@ def main():
     context = OnnxControllerContext()
     state_handler = StateHandler(context)
     command_generator = OnnxCommandGenerator(
-        context, config, policy_file, False, logger=logger
+        context, bundle.config, bundle.policy_file, False, logger=logger
     )
     gamepad = TerminalKeyboard(context, x_vel=0.0, y_vel=0.0, yaw=0.0)
 

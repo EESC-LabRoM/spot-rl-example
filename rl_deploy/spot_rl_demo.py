@@ -59,11 +59,9 @@ def main():
     """Command line interface. change that is ok"""
     parser = argparse.ArgumentParser()
     bosdyn.client.util.add_base_arguments(parser)
-    parser.add_argument(
-        "-policy_file_path",
-        type=Path,
-        default=Path(__file__).parent / "configs",
-        help="Path to the policy file or directory containing the policy file.",
+    configs_dir = Path(__file__).resolve().parent / "configs"
+    orbit.orbit_configuration.add_policy_bundle_argument(
+        parser, configs_dir
     )
     parser.add_argument("-m", "--mock", action="store_true")
     parser.add_argument(
@@ -80,11 +78,13 @@ def main():
     )
     options = parser.parse_args()
 
-    env_config = orbit.orbit_configuration.detect_config_file(options.policy_file_path)
-    policy_file = orbit.orbit_configuration.detect_policy_file(options.policy_file_path)
-
-    config = orbit.orbit_configuration.load_configuration(env_config)
-    print("Loaded configs: ", config)
+    # Resolve the full runtime contract and instantiate ONNX before any robot
+    # connection, lease, power-on, or command-stream operation.
+    bundle = orbit.orbit_configuration.resolve_policy_bundle(
+        options.policy_dir, configs_dir
+    )
+    print("Loaded policy bundle: ", bundle.directory)
+    print("Loaded configs: ", bundle.config)
 
     context = OnnxControllerContext()
     state_handler = StateHandler(context)
@@ -98,7 +98,7 @@ def main():
     logger = HDF5Logger(options.hdf5_log, metadata_path=metadata_path)
     _register_emergency_hdf5_saves(logger)
     command_generator = OnnxCommandGenerator(
-        context, config, policy_file, options.verbose, logger=logger
+        context, bundle.config, bundle.policy_file, options.verbose, logger=logger
     )
     gamepad = TerminalKeyboard(context)
     # 333 Hz state update / 6 => ~56 Hz control updates

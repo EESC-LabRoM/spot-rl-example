@@ -5,6 +5,7 @@ import json
 import os
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List
 
 import yaml
@@ -61,8 +62,37 @@ class OrbitConfig:
     gait_frequency: float = 1.5
     foot_height_max: float = 0.15
     gait_swing_fraction: float = 0.25
+    gait_pattern: str = "static_crawl"
+    standing_velocity_threshold: float = 0.05
+    control_period_s: float = 0.02
+    orientation_command: List[float] = field(default_factory=lambda: [0.0, 0.0])
+    policy_inputs: List[str] = field(default_factory=list)
     gait_phase_offsets: List[float] = field(
         default_factory=lambda: [0.0, 0.5, 0.75, 0.25]
+    )
+
+
+@dataclass(frozen=True)
+class PolicyBundle:
+    directory: Path
+    policy_file: Path
+    manifest: dict
+    config: OrbitConfig
+
+
+def add_policy_bundle_argument(parser, default: os.PathLike | str):
+    """Add the shared policy-bundle CLI, including the historical demo spelling."""
+    parser.add_argument(
+        "-policy_file_path",
+        "--policy-file-path",
+        "--policy-dir",
+        dest="policy_dir",
+        type=Path,
+        default=Path(default),
+        help=(
+            "Directory containing exactly one ONNX model and policy.yaml. "
+            "Defaults to rl_deploy/configs."
+        ),
     )
 
 
@@ -97,13 +127,65 @@ def detect_policy_file(directory: os.PathLike | str) -> str | None:
 
     return filepath to onnx file
     """
+    if os.path.isfile(directory):
+        if str(directory).endswith(".onnx"):
+            return str(directory)
+        raise ValueError(f"Policy path is not an ONNX file: {directory}")
     files = [f for f in os.listdir(directory) if f.endswith(".onnx")]
     if len(files) == 1:
         return os.path.join(directory, files[0])
-    return None
+    raise ValueError(
+        f"Expected exactly one ONNX file in {directory}, found {len(files)}"
+    )
 
 
-def load_configuration(env_config: dict) -> OrbitConfig:
+def load_policy_manifest(
+    directory: os.PathLike | str, policy_file: os.PathLike | str | None = None
+) -> dict:
+    """Load and minimally validate the policy bundle's runtime contract."""
+    directory = os.path.dirname(directory) if os.path.isfile(directory) else directory
+    path = os.path.join(directory, "policy.yaml")
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"Policy bundle is missing {path}")
+    with open(path) as f:
+        manifest = yaml.safe_load(f)
+    if manifest.get("contract_version") != 1:
+        raise ValueError(
+            f"Unsupported policy contract version: {manifest.get('contract_version')}"
+        )
+    declared_model = manifest.get("model", {}).get("file")
+    if not declared_model:
+        raise ValueError("Policy manifest does not declare model.file")
+    expected_model = (
+        os.path.basename(policy_file)
+        if policy_file is not None
+        else os.path.basename(detect_policy_file(directory))
+    )
+    if declared_model != expected_model:
+        raise ValueError(
+            f"Policy manifest declares {declared_model}, but selected {expected_model}"
+        )
+    return manifest
+
+
+def resolve_policy_bundle(
+    policy_location: os.PathLike | str,
+    env_directory: os.PathLike | str,
+) -> PolicyBundle:
+    """Resolve and validate the portable policy bundle before starting a backend."""
+    policy_file = Path(detect_policy_file(policy_location)).resolve()
+    directory = policy_file.parent
+    manifest = load_policy_manifest(directory, policy_file)
+    env_config = detect_config_file(env_directory)
+    if env_config is None:
+        raise FileNotFoundError(
+            f"Expected exactly one env.yaml or env.json in {env_directory}"
+        )
+    config = load_configuration(env_config, manifest)
+    return PolicyBundle(directory, policy_file, manifest, config)
+
+
+def load_configuration(env_config: dict, policy_manifest: dict | None = None) -> OrbitConfig:
     """parse json file and populate an OrbitConfig dataclass
 
     arguments
@@ -132,16 +214,62 @@ def load_configuration(env_config: dict) -> OrbitConfig:
 
     action_scale = env_config["actions"]["joint_pos"]["scale"]
     standing_height = env_config["scene"]["robot"]["init_state"]["pos"][2]
-    height_command = float(env_config.get("policy_height_command", 0.6))
-    gait_frequency = float(env_config.get("policy_gait_frequency", 1.5))
-    foot_height_max = float(env_config.get("policy_foot_height_max", 0.15))
-    gait_swing_fraction = float(env_config.get("policy_gait_swing_fraction", 0.25))
+    observations = (policy_manifest or {}).get("observations", {})
+    gait = (policy_manifest or {}).get("gait", {})
+    control = (policy_manifest or {}).get("control", {})
+    model = (policy_manifest or {}).get("model", {})
+    action_contract = (policy_manifest or {}).get("actions", {})
+    height_command = float(
+        observations.get(
+            "height_command", env_config.get("policy_height_command", 0.6)
+        )
+    )
+    orientation_command = [
+        float(value) for value in observations.get("base_orientation_command", [0.0, 0.0])
+    ]
+    gait_frequency = float(
+        gait.get("frequency", env_config.get("policy_gait_frequency", 1.5))
+    )
+    foot_height_max = float(
+        gait.get(
+            "foot_height_max", env_config.get("policy_foot_height_max", 0.15)
+        )
+    )
+    gait_swing_fraction = float(
+        gait.get(
+            "swing_fraction",
+            env_config.get("policy_gait_swing_fraction", 0.25),
+        )
+    )
     gait_phase_offsets = [
         float(value)
-        for value in env_config.get(
-            "policy_gait_phase_offsets", [0.0, 0.5, 0.75, 0.25]
+        for value in gait.get(
+            "phase_offsets",
+            env_config.get("policy_gait_phase_offsets", [0.0, 0.5, 0.75, 0.25]),
         )
     ]
+    gait_pattern = str(gait.get("pattern", "static_crawl"))
+    standing_velocity_threshold = float(gait.get("standing_velocity_threshold", 0.05))
+    control_period_s = float(control.get("period_s", 0.02))
+    if gait_pattern != "static_crawl":
+        raise ValueError(f"Unsupported deployment gait pattern: {gait_pattern}")
+    if len(orientation_command) != 2 or len(gait_phase_offsets) != 4:
+        raise ValueError("Policy manifest command dimensions are invalid")
+    if policy_manifest:
+        if control_period_s != 0.02:
+            raise ValueError(
+                f"Spot deployment requires a 0.02 s control period, got {control_period_s}"
+            )
+        if action_contract.get("output") != "absolute_joint_positions":
+            raise ValueError("Policy must output absolute_joint_positions")
+        if action_contract.get("last_actions_reset") != "default_leg_joint_offsets":
+            raise ValueError("Unsupported previous-action reset contract")
+        if (policy_manifest.get("recurrent_state") or {}).get("reset") != "zeros":
+            raise ValueError("Unsupported recurrent-state reset contract")
+        if list(action_contract.get("joint_names", [])) != list(
+            ORDERED_JOINT_NAMES_ISAAC
+        ):
+            raise ValueError("Policy manifest joint ordering does not match deployment")
 
     # Override the arm with default values for kp, kd
     for joint_name in ORDERED_JOINT_NAMES_ARM_ISAAC:
@@ -162,4 +290,9 @@ def load_configuration(env_config: dict) -> OrbitConfig:
         foot_height_max=foot_height_max,
         gait_swing_fraction=gait_swing_fraction,
         gait_phase_offsets=gait_phase_offsets,
+        gait_pattern=gait_pattern,
+        standing_velocity_threshold=standing_velocity_threshold,
+        control_period_s=control_period_s,
+        orientation_command=orientation_command,
+        policy_inputs=list(model.get("inputs", [])),
     )
