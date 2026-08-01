@@ -4,22 +4,23 @@ import time
 
 
 class EventDivider:
-    def __init__(self, context, factor: int):
+    def __init__(self, context, period_s: float):
         self._context = context
         self._event = context.event
-        self._factor = factor
+        self._period_s = float(period_s)
+        self._deadline = None
 
     def __call__(self):
-        count = 0
         wait_start = time.perf_counter()
-
-        while count < self._factor:
-            if not self._event.wait(1):
-                return False
-
-            count += 1
-            self._event.clear()
-            time.sleep(0.001)
+        if not self._event.wait(1):
+            return False
+        self._event.clear()
+        now = time.perf_counter()
+        if self._deadline is None or now - self._deadline >= self._period_s:
+            self._deadline = now
+        else:
+            self._deadline += self._period_s
+            time.sleep(max(0.0, self._deadline - now))
 
         wait_end = time.perf_counter()
         if hasattr(self._context, 'timing_dict'):

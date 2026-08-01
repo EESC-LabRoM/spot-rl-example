@@ -231,16 +231,19 @@ class OnnxCommandGenerator:
         self._last_action = list(self.base_offsets_ordered_spot)
 
     def _foot_height_commands(self, config):
+        foot_radius = float(config.foot_radius)
         if np.linalg.norm(self._context.velocity_cmd) < float(
             config.standing_velocity_threshold
         ):
-            return np.zeros((1, 4), dtype=np.float32)
+            return np.full((1, 4), foot_radius, dtype=np.float32)
         swing_fraction = float(config.gait_swing_fraction)
         phase_offsets = np.asarray(config.gait_phase_offsets, dtype=np.float32)
         theta = (self._gait_phase - phase_offsets) % 1.0
         swing = theta < swing_fraction
         height = np.sin(np.pi * theta / swing_fraction)
-        command = float(config.foot_height_max) * np.where(swing, height, 0.0)
+        command = foot_radius + float(config.foot_height_max) * np.where(
+            swing, height, 0.0
+        )
         return command.astype(np.float32).reshape(1, 4)
 
     def _advance_gait_phase(self, config):
@@ -498,11 +501,18 @@ class OnnxCommandGenerator:
         return outputs["actions_output"].tolist()[0]
 
     def _deployment_action(self, output):
+        output = np.asarray(output, dtype=np.float32)
+        if output.shape != (12,):
+            raise ValueError(f"Policy output must have shape (12,), got {output.shape}")
+        if not np.isfinite(output).all():
+            raise ValueError("Policy output contains non-finite values")
         if self._flat_obs_size is None:
-            return list(output) + self.arm_offsets_ordered
+            legs = output
+        else:
+            legs = np.asarray(self.base_offsets_ordered_spot) + self.action_scale * output
         legs = [
-            default + self.action_scale * residual
-            for default, residual in zip(self.base_offsets_ordered_spot, output)
+            float(np.clip(value, JOINT_LIMITS[name]["lower"], JOINT_LIMITS[name]["upper"]))
+            for name, value in zip(ORDERED_JOINT_NAMES_SPOT_BASE, legs)
         ]
         return legs + self.arm_offsets_ordered
 

@@ -9,7 +9,7 @@ from rl_deploy.orbit.onnx_command_generator import (
     OnnxControllerContext,
 )
 from rl_deploy.orbit.orbit_configuration import OrbitConfig
-from rl_deploy.spot.constants import ORDERED_JOINT_NAMES_SPOT
+from rl_deploy.spot.constants import JOINT_LIMITS, ORDERED_JOINT_NAMES_SPOT
 
 
 class _Node:
@@ -210,13 +210,13 @@ class OnnxCommandGeneratorTest(unittest.TestCase):
 
         inputs = generator.collect_inputs(context.latest_state, generator._config)
         self.assertEqual(inputs["foot_height_commands"].shape, (1, 4))
-        np.testing.assert_allclose(inputs["foot_height_commands"], np.zeros((1, 4)))
+        np.testing.assert_allclose(inputs["foot_height_commands"], np.full((1, 4), 0.036))
 
         context.velocity_cmd = [0.5, 0.0, 0.0]
         generator._gait_phase = 0.125
         inputs = generator.collect_inputs(context.latest_state, generator._config)
         np.testing.assert_allclose(
-            inputs["foot_height_commands"], [[0.15, 0.0, 0.0, 0.0]], atol=1e-6
+            inputs["foot_height_commands"], [[0.186, 0.036, 0.036, 0.036]], atol=1e-6
         )
 
         generator._advance_gait_phase(generator._config)
@@ -237,7 +237,36 @@ class OnnxCommandGeneratorTest(unittest.TestCase):
         generator._gait_phase = 0.125
         context.velocity_cmd = [0.049, 0.0, 0.0]
         inputs = generator.collect_inputs(context.latest_state, generator._config)
-        np.testing.assert_allclose(inputs["foot_height_commands"], np.zeros((1, 4)))
+        np.testing.assert_allclose(inputs["foot_height_commands"], np.full((1, 4), 0.036))
+
+    def test_deployment_action_clamps_leg_targets_and_preserves_arm_stow(self):
+        session = _Session(recurrent=False, named=True)
+        with patch(
+            "rl_deploy.orbit.onnx_command_generator.ort.InferenceSession",
+            return_value=session,
+        ):
+            generator = OnnxCommandGenerator(None, _config(), "policy.onnx", False)
+
+        action = generator._deployment_action([100.0] * 6 + [-100.0] * 6)
+        self.assertEqual(len(action), 19)
+        for name, value in zip(ORDERED_JOINT_NAMES_SPOT[:12], action[:12]):
+            self.assertGreaterEqual(value, JOINT_LIMITS[name]["lower"])
+            self.assertLessEqual(value, JOINT_LIMITS[name]["upper"])
+        self.assertEqual(action[12:], generator.arm_offsets_ordered)
+
+    def test_deployment_action_rejects_invalid_output(self):
+        session = _Session(recurrent=False, named=True)
+        with patch(
+            "rl_deploy.orbit.onnx_command_generator.ort.InferenceSession",
+            return_value=session,
+        ):
+            generator = OnnxCommandGenerator(None, _config(), "policy.onnx", False)
+
+        with self.assertRaisesRegex(ValueError, "shape"):
+            generator._deployment_action([0.0] * 11)
+        for value in (np.nan, np.inf):
+            with self.assertRaisesRegex(ValueError, "non-finite"):
+                generator._deployment_action([value] + [0.0] * 11)
 
     def test_recurrent_policy_requires_named_outputs(self):
         session = _Session(missing_output=True)

@@ -17,13 +17,13 @@ class TerminalKeyboardConfig:
     yaw_right_key: str = 'e'
     stop_key: str = ' '
     
-    delta_forward_velocity: float = 0.5
-    delta_lateral_velocity: float = 0.5
-    delta_yaw_velocity: float = 0.5
-    max_forward_velocity: float = 1.0
-    max_backward_velocity: float = 1.0
-    max_lateral_velocity: float = 1.0
-    max_yaw_velocity: float = 1.0
+    delta_forward_velocity: float = 0.1
+    delta_lateral_velocity: float = 0.1
+    delta_yaw_velocity: float = 0.1
+    max_forward_velocity: float = 0.55
+    max_backward_velocity: float = 0.55
+    max_lateral_velocity: float = 0.45
+    max_yaw_velocity: float = 0.55
 
 
 class TerminalKeyboard:

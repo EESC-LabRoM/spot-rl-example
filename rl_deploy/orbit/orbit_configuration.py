@@ -1,6 +1,9 @@
 # Copyright (c) 2024 Boston Dynamics AI Institute LLC. All rights reserved.
 
-from rl_deploy.orbit.orbit_constants import ORDERED_JOINT_NAMES_ARM_ISAAC
+from rl_deploy.orbit.orbit_constants import (
+    ORDERED_JOINT_NAMES_ARM_ISAAC,
+    ORDERED_JOINT_NAMES_BASE_ISAAC,
+)
 import json
 import os
 import re
@@ -61,6 +64,7 @@ class OrbitConfig:
     height_command: float = 0.6
     gait_frequency: float = 1.5
     foot_height_max: float = 0.15
+    foot_radius: float = 0.036
     gait_swing_fraction: float = 0.25
     gait_pattern: str = "static_crawl"
     standing_velocity_threshold: float = 0.05
@@ -149,7 +153,7 @@ def load_policy_manifest(
         raise FileNotFoundError(f"Policy bundle is missing {path}")
     with open(path) as f:
         manifest = yaml.safe_load(f)
-    if manifest.get("contract_version") != 1:
+    if manifest.get("contract_version") != 2:
         raise ValueError(
             f"Unsupported policy contract version: {manifest.get('contract_version')}"
         )
@@ -235,6 +239,7 @@ def load_configuration(env_config: dict, policy_manifest: dict | None = None) ->
             "foot_height_max", env_config.get("policy_foot_height_max", 0.15)
         )
     )
+    foot_radius = float(gait.get("foot_radius", 0.036))
     gait_swing_fraction = float(
         gait.get(
             "swing_fraction",
@@ -251,7 +256,7 @@ def load_configuration(env_config: dict, policy_manifest: dict | None = None) ->
     gait_pattern = str(gait.get("pattern", "static_crawl"))
     standing_velocity_threshold = float(gait.get("standing_velocity_threshold", 0.05))
     control_period_s = float(control.get("period_s", 0.02))
-    if gait_pattern != "static_crawl":
+    if gait_pattern not in ("static_crawl", "trot"):
         raise ValueError(f"Unsupported deployment gait pattern: {gait_pattern}")
     if len(orientation_command) != 2 or len(gait_phase_offsets) != 4:
         raise ValueError("Policy manifest command dimensions are invalid")
@@ -262,12 +267,12 @@ def load_configuration(env_config: dict, policy_manifest: dict | None = None) ->
             )
         if action_contract.get("output") != "absolute_joint_positions":
             raise ValueError("Policy must output absolute_joint_positions")
-        if action_contract.get("last_actions_reset") != "default_leg_joint_offsets":
+        if action_contract.get("last_actions_reset") != "reference_joint_positions":
             raise ValueError("Unsupported previous-action reset contract")
         if (policy_manifest.get("recurrent_state") or {}).get("reset") != "zeros":
             raise ValueError("Unsupported recurrent-state reset contract")
         if list(action_contract.get("joint_names", [])) != list(
-            ORDERED_JOINT_NAMES_ISAAC
+            ORDERED_JOINT_NAMES_BASE_ISAAC
         ):
             raise ValueError("Policy manifest joint ordering does not match deployment")
 
@@ -288,6 +293,7 @@ def load_configuration(env_config: dict, policy_manifest: dict | None = None) ->
         height_command=height_command,
         gait_frequency=gait_frequency,
         foot_height_max=foot_height_max,
+        foot_radius=foot_radius,
         gait_swing_fraction=gait_swing_fraction,
         gait_phase_offsets=gait_phase_offsets,
         gait_pattern=gait_pattern,

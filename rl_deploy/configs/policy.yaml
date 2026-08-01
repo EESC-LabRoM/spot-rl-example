@@ -1,0 +1,83 @@
+contract_version: 2
+model:
+  file: pufferlib-20260801-160700-sweepwinner-seed42.onnx
+  policy: pufferlib_min_gru
+  observation_size: 69
+  inputs:
+  - base_linear_velocity
+  - base_angular_velocity
+  - projected_gravity
+  - velocity_commands
+  - joint_positions
+  - joint_velocities
+  - last_actions
+  - height_commands
+  - base_orientation_commands
+  - foot_height_commands
+  - hidden_state
+control:
+  period_s: 0.02
+observations:
+  height_command: 0.58
+  base_orientation_command:
+  - 0.0
+  - 0.0
+actions:
+  joint_names:
+  - fl_hx
+  - fl_hy
+  - fl_kn
+  - fr_hx
+  - fr_hy
+  - fr_kn
+  - hl_hx
+  - hl_hy
+  - hl_kn
+  - hr_hx
+  - hr_hy
+  - hr_kn
+  reference_joint_positions:
+  - 0.12
+  - 0.5
+  - -1.0
+  - -0.12
+  - 0.5
+  - -1.0
+  - 0.12
+  - 0.5
+  - -1.0
+  - -0.12
+  - 0.5
+  - -1.0
+  scales:
+  - 0.2
+  - 0.2
+  - 0.2
+  - 0.2
+  - 0.2
+  - 0.2
+  - 0.2
+  - 0.2
+  - 0.2
+  - 0.2
+  - 0.2
+  - 0.2
+  policy_action_nominal_unit_interval:
+  - -1.0
+  - 1.0
+  output: absolute_joint_positions
+  last_actions_reset: reference_joint_positions
+recurrent_state:
+  reset: zeros
+gait:
+  pattern: static_crawl
+  frequency: 1.4
+  foot_height_max: 0.14
+  foot_radius: 0.036
+  swing_fraction: 0.25
+  phase_offsets:
+  - 0.0
+  - 0.5
+  - 0.75
+  - 0.25
+  standing_velocity_threshold: 0.05

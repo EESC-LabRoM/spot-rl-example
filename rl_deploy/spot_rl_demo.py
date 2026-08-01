@@ -101,8 +101,7 @@ def main():
         context, bundle.config, bundle.policy_file, options.verbose, logger=logger
     )
     gamepad = TerminalKeyboard(context)
-    # 333 Hz state update / 6 => ~56 Hz control updates
-    timeing_policy = EventDivider(context, 6)
+    timeing_policy = EventDivider(context, bundle.config.control_period_s)
 
     if options.mock:
         spot = MockSpot()
