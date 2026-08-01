@@ -602,7 +602,11 @@ class OnnxCommandGenerator:
             inputs["foot_height_commands"] = self._foot_height_commands(config)
 
         self._observation_terms = inputs
-        return inputs
+        return {
+            name: inputs[name]
+            for name in self._session_input_names
+            if name != "hidden_state"
+        }
 
     def create_proto(self, pos_command: List[float]):
         """generate a proto msg for spot with a given pos_command

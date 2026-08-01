@@ -27,6 +27,7 @@ class _Session:
         flat_obs_size=None,
         named=False,
         foot_height=False,
+        base_linear_velocity=True,
     ):
         self.recurrent = recurrent
         self.calls = []
@@ -34,7 +35,6 @@ class _Session:
             self._inputs = [_Node("obs", [1, flat_obs_size])]
         elif named:
             self._inputs = [
-                _Node("base_linear_velocity", [1, 3]),
                 _Node("base_angular_velocity", [1, 3]),
                 _Node("projected_gravity", [1, 3]),
                 _Node("velocity_commands", [1, 3]),
@@ -44,6 +44,8 @@ class _Session:
                 _Node("height_commands", [1, 1]),
                 _Node("base_orientation_commands", [1, 2]),
             ]
+            if base_linear_velocity:
+                self._inputs.insert(0, _Node("base_linear_velocity", [1, 3]))
             if foot_height:
                 self._inputs.append(_Node("foot_height_commands", [1, 4]))
         else:
@@ -181,6 +183,23 @@ class OnnxCommandGeneratorTest(unittest.TestCase):
         custom.height_command = 0.5
         inputs = generator.collect_inputs(context.latest_state, custom)
         np.testing.assert_allclose(inputs["height_commands"], [[0.5]])
+
+    def test_named_policy_without_base_linear_velocity_gets_exact_graph_inputs(self):
+        session = _Session(
+            recurrent=False, named=True, foot_height=True, base_linear_velocity=False
+        )
+        context = OnnxControllerContext()
+        context.latest_state = _state()
+        with patch(
+            "rl_deploy.orbit.onnx_command_generator.ort.InferenceSession",
+            return_value=session,
+        ):
+            generator = OnnxCommandGenerator(context, _config(), "policy.onnx", False)
+
+        inputs = generator.collect_inputs(context.latest_state, generator._config)
+        self.assertEqual(set(inputs), generator._session_input_names)
+        self.assertNotIn("base_linear_velocity", inputs)
+        self.assertIn("base_linear_velocity", generator._observation_terms)
 
     def test_flat_84_policy_includes_joint_command_block(self):
         session = _Session(recurrent=False, flat_obs_size=84)
