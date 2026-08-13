@@ -4,6 +4,7 @@ from unittest.mock import patch
 import numpy as np
 from bosdyn.api.robot_state_pb2 import RobotStateStreamResponse
 
+from rl_deploy.orbit.arm_motion import ArmMotion
 from rl_deploy.orbit.onnx_command_generator import (
     OnnxCommandGenerator,
     OnnxControllerContext,
@@ -272,6 +273,59 @@ class OnnxCommandGeneratorTest(unittest.TestCase):
             self.assertGreaterEqual(value, JOINT_LIMITS[name]["lower"])
             self.assertLessEqual(value, JOINT_LIMITS[name]["upper"])
         self.assertEqual(action[12:], generator.arm_offsets_ordered)
+
+    def _arm_generator(self, motion):
+        session = _Session(recurrent=False, named=True)
+        with patch(
+            "rl_deploy.orbit.onnx_command_generator.ort.InferenceSession",
+            return_value=session,
+        ):
+            return OnnxCommandGenerator(
+                None, _config(), "policy.onnx", False, arm_motion=motion
+            )
+
+    def test_deployment_action_plays_arm_motion_when_enabled(self):
+        stow = [0.0, -3.1415, 3.1415, 1.5655, 0.0, -1.5655, 0.0]
+        motion = ArmMotion(
+            [[0.0, -1.0, 1.0, 0.5, 0.0, -0.5, 0.0]],
+            [0.02, 0.02],
+            [0.0, 0.0],
+            stow,
+            start_hold_s=0.0,
+        )
+        generator = self._arm_generator(motion)
+
+        first = generator._deployment_action([0.0] * 12)
+        second = generator._deployment_action([0.0] * 12)
+
+        self.assertEqual(len(second), 19)
+        self.assertEqual(first[12:], stow)
+        self.assertNotEqual(second[12:], stow)
+        for name, value in zip(ORDERED_JOINT_NAMES_SPOT[12:], second[12:]):
+            self.assertGreaterEqual(value, JOINT_LIMITS[name]["lower"])
+            self.assertLessEqual(value, JOINT_LIMITS[name]["upper"])
+
+    def test_arm_targets_are_clamped_to_joint_limits(self):
+        stow = [0.0, -3.1415, 3.1415, 1.5655, 0.0, -1.5655, 0.0]
+        motion = ArmMotion(
+            [[0.0, -10.0, 1.0, 0.5, 0.0, -0.5, 0.0]],
+            [0.02, 0.02],
+            [0.0, 0.0],
+            stow,
+            start_hold_s=0.0,
+        )
+        generator = self._arm_generator(motion)
+
+        generator._deployment_action([0.0] * 12)
+        action = generator._deployment_action([0.0] * 12)
+
+        self.assertEqual(action[13], JOINT_LIMITS["arm_sh1"]["lower"])
+
+    def test_arm_stow_mismatch_is_rejected(self):
+        motion = ArmMotion([[0.0] * 7], [1.0, 1.0], [1.0, 1.0], [9.0] * 7)
+
+        with self.assertRaisesRegex(ValueError, "does not match deployment stow"):
+            self._arm_generator(motion)
 
     def test_deployment_action_rejects_invalid_output(self):
         session = _Session(recurrent=False, named=True)

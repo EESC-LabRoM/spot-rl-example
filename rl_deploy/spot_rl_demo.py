@@ -9,6 +9,7 @@ from pathlib import Path
 import bosdyn.client.util
 import orbit.orbit_configuration
 from rl_deploy.hid.terminal_keyboard import TerminalKeyboard
+from rl_deploy.orbit import arm_motion
 from rl_deploy.orbit.onnx_command_generator import (
     OnnxCommandGenerator,
     OnnxControllerContext,
@@ -85,6 +86,7 @@ def main():
     )
     print("Loaded policy bundle: ", bundle.directory)
     print("Loaded configs: ", bundle.config)
+    arm = arm_motion.from_manifest(bundle.manifest, options.arm)
 
     context = OnnxControllerContext()
     state_handler = StateHandler(context)
@@ -98,7 +100,8 @@ def main():
     logger = HDF5Logger(options.hdf5_log, metadata_path=metadata_path)
     _register_emergency_hdf5_saves(logger)
     command_generator = OnnxCommandGenerator(
-        context, bundle.config, bundle.policy_file, options.verbose, logger=logger
+        context, bundle.config, bundle.policy_file, options.verbose, logger=logger,
+        arm_motion=arm,
     )
     gamepad = TerminalKeyboard(context)
     timeing_policy = EventDivider(context, bundle.config.control_period_s)

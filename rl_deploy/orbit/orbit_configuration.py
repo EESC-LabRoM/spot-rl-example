@@ -98,6 +98,15 @@ def add_policy_bundle_argument(parser, default: os.PathLike | str):
             "Defaults to rl_deploy/configs."
         ),
     )
+    parser.add_argument(
+        "--arm",
+        choices=("off", "easy", "full"),
+        default="off",
+        help=(
+            "Replay the arm disturbance the policy was trained against: easy = the arm_easy "
+            "tier, full = every tier. Defaults to off, which holds the arm stowed."
+        ),
+    )
 
 
 def detect_config_file(directory: os.PathLike | str) -> dict | None:

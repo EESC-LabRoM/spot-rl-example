@@ -25,6 +25,16 @@ uv run rl_deploy/spot_rl_demo.py ROBOT_IP --policy-dir /path/to/run/exported
 Recurrent MinGRU state is detected from the ONNX inputs and carried between control steps
 automatically.
 
+Policies trained against a moving arm ship an `arm:` block in `policy.yaml` holding the cuRobo
+reachability poses, grouped into the training difficulty tiers. `--arm` replays that disturbance
+while you drive the robot; both entry points accept it and the sequence is seeded, so the Isaac
+twin and the real robot play the same one. The default keeps the arm stowed.
+
+```bash
+uv run rl_deploy/spot_rl_isaac.py --policy-dir /path/to/run/exported --arm easy  # arm_easy tier
+uv run rl_deploy/spot_rl_demo.py ROBOT_IP --policy-dir /path/to/run/exported --arm full  # all tiers
+```
+
 See `rl_deploy/configs/README.md` for the exact portable bundle layout. The Faster W&B model
 artifact contains both required policy files.
 

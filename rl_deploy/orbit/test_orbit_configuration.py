@@ -32,6 +32,22 @@ class PolicyBundleConfigurationTest(unittest.TestCase):
             expected = default if not arguments else Path("/bundle")
             self.assertEqual(options.policy_dir, expected)
 
+    def test_arm_argument_defaults_to_off_and_accepts_tiers(self):
+        default = Path("/portable/configs")
+        for arguments, expected in (
+            ([], "off"),
+            (["--arm", "easy"], "easy"),
+            (["--arm", "full"], "full"),
+        ):
+            parser = argparse.ArgumentParser()
+            add_policy_bundle_argument(parser, default)
+            self.assertEqual(parser.parse_args(arguments).arm, expected)
+
+        parser = argparse.ArgumentParser()
+        add_policy_bundle_argument(parser, default)
+        with self.assertRaises(SystemExit), patch("sys.stderr"):
+            parser.parse_args(["--arm", "bogus"])
+
     def test_loads_versioned_manifest_for_selected_model(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

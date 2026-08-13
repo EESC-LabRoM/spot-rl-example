@@ -26,6 +26,7 @@ from rl_deploy.spot.constants import (
     JOINT_LIMITS,
     JOINT_SOFT_LIMITS,
     ORDERED_JOINT_NAMES_SPOT,
+    ORDERED_JOINT_NAMES_SPOT_ARM,
     ORDERED_JOINT_NAMES_SPOT_BASE,
 )
 from rl_deploy.utils.dict_tools import dict_to_list, find_ordering, reorder
@@ -131,6 +132,7 @@ class OnnxCommandGenerator:
         verbose: bool,
         logger: HDF5Logger | None = None,
         mock: bool = False,
+        arm_motion=None,
     ):
         self._context = context
         self._config = config
@@ -172,6 +174,17 @@ class OnnxCommandGenerator:
         # dict_to_list(
         #     [0.0, -3.1415, 3.1415, 1.5655, 0.00, 0.0, 0.0], ORDERED_JOINT_NAMES_ARM_ISAAC
         # )
+
+        # None keeps the arm stowed. Otherwise the bundle's stow must agree with ours, or the
+        # first commanded arm target would step away from where the arm actually is.
+        self.arm_motion = arm_motion
+        if arm_motion is not None and not np.allclose(
+            arm_motion.stow, self.arm_offsets_ordered, atol=1e-3
+        ):
+            raise ValueError(
+                f"policy.yaml arm stow {arm_motion.stow} does not match deployment stow "
+                f"{self.arm_offsets_ordered}"
+            )
 
         self._triggered_safety = False
         self._safety_pos = None
@@ -514,7 +527,13 @@ class OnnxCommandGenerator:
             float(np.clip(value, JOINT_LIMITS[name]["lower"], JOINT_LIMITS[name]["upper"]))
             for name, value in zip(ORDERED_JOINT_NAMES_SPOT_BASE, legs)
         ]
-        return legs + self.arm_offsets_ordered
+        if self.arm_motion is None:
+            return legs + self.arm_offsets_ordered
+        arm = [
+            float(np.clip(value, JOINT_LIMITS[name]["lower"], JOINT_LIMITS[name]["upper"]))
+            for name, value in zip(ORDERED_JOINT_NAMES_SPOT_ARM, self.arm_motion.step())
+        ]
+        return legs + arm
 
     def collect_inputs(
         self,

@@ -28,7 +28,7 @@ parser.add_argument("--task", type=str, default=None, help="Name of the task.")
 configs_dir = Path(__file__).resolve().parent / "configs"
 
 # Importable before Isaac Sim starts; keeps this CLI identical to spot_rl_demo.py.
-from rl_deploy.orbit import orbit_configuration
+from rl_deploy.orbit import arm_motion, orbit_configuration
 
 orbit_configuration.add_policy_bundle_argument(parser, configs_dir)
 
@@ -70,6 +70,7 @@ def main():
     bundle = orbit_configuration.resolve_policy_bundle(
         args_cli.policy_dir, configs_dir
     )
+    arm = arm_motion.from_manifest(bundle.manifest, args_cli.arm)
 
     env_cfg = SpotFlatEnvCfg()
     env_cfg.scene.num_envs = 1
@@ -83,7 +84,7 @@ def main():
     context = OnnxControllerContext()
     state_handler = StateHandler(context)
     command_generator = OnnxCommandGenerator(
-        context, bundle.config, bundle.policy_file, False, logger=logger
+        context, bundle.config, bundle.policy_file, False, logger=logger, arm_motion=arm
     )
     gamepad = TerminalKeyboard(context, x_vel=0.0, y_vel=0.0, yaw=0.0)
 
