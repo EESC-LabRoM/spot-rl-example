@@ -24,13 +24,11 @@ rl_deploy/configs/
 
 Faster uploads the ONNX and `policy.yaml` together in the run's model artifact, so a deployment
 machine does not need the Faster checkout or local run directory. Download both artifact files,
-replace the old ONNX and manifest here, and run without `--policy-dir`.
+replace the old ONNX and manifest here, and run without `--policy_dir`.
 
-To use a bundle elsewhere without copying it here, pass any of the supported aliases:
+To use a bundle elsewhere without copying it here:
 
 ```bash
-uv run rl_deploy/spot_rl_isaac.py --policy-dir /path/to/exported
-uv run rl_deploy/spot_rl_demo.py ROBOT_IP --policy-dir /path/to/exported
+uv run rl_deploy/spot_rl_isaac.py --policy_dir /path/to/exported
+uv run rl_deploy/spot_rl_demo.py ROBOT_IP --policy_dir /path/to/exported
 ```
-
-The historical `-policy_file_path` option remains accepted by `spot_rl_demo.py`.

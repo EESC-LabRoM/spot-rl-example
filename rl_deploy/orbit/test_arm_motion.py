@@ -46,22 +46,21 @@ class FromManifestTest(unittest.TestCase):
 
 class ArmMotionTest(unittest.TestCase):
     def test_first_ticks_emit_stow(self):
-        motion = ArmMotion([POSE_A], [2.5, 4.0], [4.0, 7.0], STOW, start_hold_s=0.1)
+        motion = ArmMotion([POSE_A], [2.5, 4.0], [4.0, 7.0], STOW)
 
-        for _ in range(5):
+        for _ in range(100):
             self.assertEqual(motion.step(), STOW)
 
     def test_lerp_reaches_goal_then_resamples_without_a_jump(self):
         motion = ArmMotion(
-            [POSE_A], [0.04, 0.04], [0.02, 0.02], [0.0] * 7, start_hold_s=0.0
+            [POSE_A], [0.04, 0.04], [0.02, 0.02], [0.0] * 7
         )
 
-        # One degenerate step at stow, then a 2-step lerp to POSE_A, then a 1-step hold.
-        self.assertEqual(motion.step(), [0.0] * 7)
+        for _ in range(101):
+            self.assertEqual(motion.step(), [0.0] * 7)
         self.assertEqual(motion.step(), [0.05] * 7)
         self.assertEqual(motion.step(), POSE_A)
         self.assertEqual(motion.step(), POSE_A)
-        # The next segment starts from the goal, so the target is continuous across a resample.
         self.assertEqual(motion.start, POSE_A)
 
     def test_same_seed_reproduces_sequence(self):

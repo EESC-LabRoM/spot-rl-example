@@ -18,19 +18,24 @@ from rl_deploy.orbit.orbit_constants import ORDERED_JOINT_NAMES_BASE_ISAAC
 
 
 class PolicyBundleConfigurationTest(unittest.TestCase):
-    def test_policy_argument_defaults_to_configs_and_preserves_aliases(self):
+    def test_policy_argument_defaults_to_configs(self):
         default = Path("/portable/configs")
         for arguments in (
             [],
-            ["--policy-dir", "/bundle"],
-            ["--policy-file-path", "/bundle"],
-            ["-policy_file_path", "/bundle"],
+            ["--policy_dir", "/bundle"],
         ):
             parser = argparse.ArgumentParser()
             add_policy_bundle_argument(parser, default)
             options = parser.parse_args(arguments)
             expected = default if not arguments else Path("/bundle")
             self.assertEqual(options.policy_dir, expected)
+
+    def test_policy_argument_rejects_old_aliases(self):
+        for alias in ("--policy-dir", "--policy_file_path", "--policy-file-path", "-policy_file_path"):
+            parser = argparse.ArgumentParser()
+            add_policy_bundle_argument(parser, Path("/portable/configs"))
+            with self.assertRaises(SystemExit), patch("sys.stderr"):
+                parser.parse_args([alias, "/bundle"])
 
     def test_arm_argument_defaults_to_off_and_accepts_tiers(self):
         default = Path("/portable/configs")

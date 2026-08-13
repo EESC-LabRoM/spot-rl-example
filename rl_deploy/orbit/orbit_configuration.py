@@ -85,11 +85,9 @@ class PolicyBundle:
 
 
 def add_policy_bundle_argument(parser, default: os.PathLike | str):
-    """Add the shared policy-bundle CLI, including the historical demo spelling."""
+    """Add the shared policy-bundle CLI."""
     parser.add_argument(
-        "-policy_file_path",
-        "--policy-file-path",
-        "--policy-dir",
+        "--policy_dir",
         dest="policy_dir",
         type=Path,
         default=Path(default),

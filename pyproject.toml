@@ -29,4 +29,5 @@ dependencies = [
     "pyps4controller>=1.2.5",
     "rosbags>=0.11.0",
     "spatialmath-python>=1.1.15",
+    "wandb>=0.21.0",
 ]

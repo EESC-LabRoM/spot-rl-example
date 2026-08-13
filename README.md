@@ -18,8 +18,15 @@ uv run rl_deploy/spot_rl_isaac.py
 uv run rl_deploy/spot_rl_demo.py ROBOT_IP
 
 # Or use an external bundle directly.
-uv run rl_deploy/spot_rl_isaac.py --policy-dir /path/to/run/exported
-uv run rl_deploy/spot_rl_demo.py ROBOT_IP --policy-dir /path/to/run/exported
+uv run rl_deploy/spot_rl_isaac.py --policy_dir /path/to/run/exported
+uv run rl_deploy/spot_rl_demo.py ROBOT_IP --policy_dir /path/to/run/exported
+```
+
+Download a run's model artifact from W&B into `external/<run-name>` and print the resulting
+`--policy_dir` path:
+
+```bash
+uv run python import.py RUN_ID
 ```
 
 Recurrent MinGRU state is detected from the ONNX inputs and carried between control steps
@@ -27,12 +34,13 @@ automatically.
 
 Policies trained against a moving arm ship an `arm:` block in `policy.yaml` holding the cuRobo
 reachability poses, grouped into the training difficulty tiers. `--arm` replays that disturbance
-while you drive the robot; both entry points accept it and the sequence is seeded, so the Isaac
-twin and the real robot play the same one. The default keeps the arm stowed.
+while you drive the robot. Motion begins after two seconds at stow and uses a seeded sequence;
+Isaac and the robot match when they execute the same number of 50 Hz command steps. The default
+keeps the arm stowed.
 
 ```bash
-uv run rl_deploy/spot_rl_isaac.py --policy-dir /path/to/run/exported --arm easy  # arm_easy tier
-uv run rl_deploy/spot_rl_demo.py ROBOT_IP --policy-dir /path/to/run/exported --arm full  # all tiers
+uv run rl_deploy/spot_rl_isaac.py --policy_dir /path/to/run/exported --arm easy  # arm_easy tier
+uv run rl_deploy/spot_rl_demo.py ROBOT_IP --policy_dir /path/to/run/exported --arm full  # all tiers
 ```
 
 See `rl_deploy/configs/README.md` for the exact portable bundle layout. The Faster W&B model

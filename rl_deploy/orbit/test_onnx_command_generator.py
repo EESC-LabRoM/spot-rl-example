@@ -291,11 +291,11 @@ class OnnxCommandGeneratorTest(unittest.TestCase):
             [0.02, 0.02],
             [0.0, 0.0],
             stow,
-            start_hold_s=0.0,
         )
         generator = self._arm_generator(motion)
 
-        first = generator._deployment_action([0.0] * 12)
+        for _ in range(101):
+            first = generator._deployment_action([0.0] * 12)
         second = generator._deployment_action([0.0] * 12)
 
         self.assertEqual(len(second), 19)
@@ -312,11 +312,11 @@ class OnnxCommandGeneratorTest(unittest.TestCase):
             [0.02, 0.02],
             [0.0, 0.0],
             stow,
-            start_hold_s=0.0,
         )
         generator = self._arm_generator(motion)
 
-        generator._deployment_action([0.0] * 12)
+        for _ in range(101):
+            generator._deployment_action([0.0] * 12)
         action = generator._deployment_action([0.0] * 12)
 
         self.assertEqual(action[13], JOINT_LIMITS["arm_sh1"]["lower"])

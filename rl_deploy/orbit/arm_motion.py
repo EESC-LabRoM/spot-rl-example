@@ -5,7 +5,7 @@ reachability pose over U(*traj_range_s), hold it for U(*hold_range_s), then resa
 the target currently is. The poses and timing ride in the exported policy.yaml `arm:` block, so a
 bundle describes its own arm motion.
 
-The RNG is seeded, so the Isaac twin and the real robot replay the identical sequence.
+The RNG is seeded, so matching 50 Hz command-step sequences replay the same motion.
 """
 
 import random
@@ -22,7 +22,6 @@ class ArmMotion:
         stow,
         step_dt: float = 0.02,
         seed: int = 0,
-        start_hold_s: float = 2.0,
     ):
         self.poses = [list(pose) for pose in poses]
         self.traj_range = tuple(traj_range_s)
@@ -30,12 +29,10 @@ class ArmMotion:
         self.stow = list(stow)
         self.step_dt = step_dt
         self.rng = random.Random(seed)
-        # Open on a degenerate segment at stow: the first ticks emit exactly the pose the arm is
-        # already holding, so enabling motion never steps the target.
         self.start = list(stow)
         self.goal = list(stow)
         self.traj_steps = 1.0
-        self.hold_steps = start_hold_s / step_dt
+        self.hold_steps = 2.0 / step_dt
         self.elapsed = 0.0
 
     def _resample(self, current):
